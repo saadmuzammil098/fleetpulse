@@ -1,0 +1,50 @@
+schema: '2.0'
+stages:
+  pipeline:
+    cmd: python -m src.pipeline
+    deps:
+    - path: data/raw/ai4i2020.csv
+      hash: md5
+      md5: f0adaa9c5e25366c6df1cc2684479871
+      size: 522048
+    - path: src/clean.py
+      hash: md5
+      md5: 84dda52c8c826553b9ed841e495ba32b
+      size: 4182
+    - path: src/ingest.py
+      hash: md5
+      md5: c827106abcda4ec5a32a78e869f911b8
+      size: 2062
+    - path: src/pipeline.py
+      hash: md5
+      md5: 6ef358deb9d495a2cb603ea08afc5c32
+      size: 2728
+    - path: src/profile.py
+      hash: md5
+      md5: 3170ac0aa6ecc8887eb7d5ea2e0fd1b5
+      size: 2705
+    - path: src/schema.py
+      hash: md5
+      md5: b6319233dbf5017c7ae60f791afa2b49
+      size: 1752
+    - path: src/validate.py
+      hash: md5
+      md5: ec0ea30a8e1963e40fc6634b3dc44898
+      size: 2119
+    outs:
+    - path: data/processed/cleaned.csv
+      hash: md5
+      md5: a95ce0898dba3421f0746ce57f326176
+      size: 513908
+    - path: reports/clean_report.json
+      hash: md5
+      md5: 119c8d25a730f00e4877032c16aab421
+      size: 902
+    - path: reports/profile_report.md
+      hash: md5
+      md5: 96ae926d26e2395c1830211feb872921
+      size: 2025
+    - path: reports/validation_report.md
+      hash: md5
+      md5: cec92c3c89427f156c33cc1a4fe29559
+      size: 278

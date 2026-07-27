@@ -1,0 +1,5 @@
+[core]
+    remote = floci-s3
+['remote "floci-s3"']
+    url = s3://fleetpulse-dvc/dvcstore
+    endpointurl = http://localhost.floci.io:4566

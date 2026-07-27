@@ -1,0 +1,16 @@
+stages:
+  pipeline:
+    cmd: python -m src.pipeline
+    deps:
+      - data/raw/ai4i2020.csv
+      - src/ingest.py
+      - src/clean.py
+      - src/schema.py
+      - src/validate.py
+      - src/profile.py
+      - src/pipeline.py
+    outs:
+      - data/processed/cleaned.csv
+      - reports/profile_report.md
+      - reports/validation_report.md
+      - reports/clean_report.json
