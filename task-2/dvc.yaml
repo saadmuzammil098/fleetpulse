@@ -2,7 +2,7 @@ stages:
   train:
     cmd: python -m src.train
     deps:
-      - ../day-01/data/processed/cleaned.csv
+      - ../task-1/data/processed/cleaned.csv
       - src/load_data.py
       - src/pipeline.py
       - src/evaluate.py

@@ -1,21 +1,21 @@
-"""Load Day 2's training data from Day 1's DVC-tracked cleaned dataset.
+"""Load Task 2's training data from Task 1's DVC-tracked cleaned dataset.
 
-Day 1 already did ingestion, cleaning, and Pandera schema validation, and
-versioned the result (``day-01/data/processed/cleaned.csv``) as a DVC
-pipeline output. Day 2 does not re-clean or re-validate raw sensor data,
-that logic and its own reproducibility story live in day-01. This module's
+Task 1 already did ingestion, cleaning, and Pandera schema validation, and
+versioned the result (``task-1/data/processed/cleaned.csv``) as a DVC
+pipeline output. Task 2 does not re-clean or re-validate raw sensor data,
+that logic and its own reproducibility story live in task-1. This module's
 only job is to locate that file (after ``dvc pull`` has populated it from
 the Floci-backed S3 remote) and split it into features/label for modeling.
 
-Why not re-import day-01's Pandera schema object directly: day-01 and
-day-02 both name their package ``src`` (relative imports inside each,
+Why not re-import task-1's Pandera schema object directly: task-1 and
+task-2 both name their package ``src`` (relative imports inside each,
 ``from .clean import ...`` etc.), so importing both as top-level ``src``
 modules in the same process collides. Re-implementing an import shim just
 to reuse a validation call whose result is already baked into the CSV
 DVC is tracking would be exactly the kind of premature abstraction the
 project avoids. Instead, ``build_dataset`` runs a light structural sanity
 check (right columns, no nulls) as a cheap trip-wire against a stale or
-hand-edited cleaned.csv, without re-deriving day-01's cleaning rules.
+hand-edited cleaned.csv, without re-deriving task-1's cleaning rules.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from pathlib import Path
 import pandas as pd
 
 DAY01_CLEANED_CSV = (
-    Path(__file__).resolve().parents[2] / "day-01" / "data" / "processed" / "cleaned.csv"
+    Path(__file__).resolve().parents[2] / "task-1" / "data" / "processed" / "cleaned.csv"
 )
 
 # Sensor + machine-state features available at prediction time.
@@ -52,13 +52,13 @@ REQUIRED_COLUMNS = FEATURE_COLUMNS + [TARGET_COLUMN]
 
 
 def load_cleaned_dataframe(path: Path = DAY01_CLEANED_CSV) -> pd.DataFrame:
-    """Read Day 1's cleaned, validated dataset. Raises if it's missing."""
+    """Read Task 1's cleaned, validated dataset. Raises if it's missing."""
     if not path.exists():
         raise FileNotFoundError(
             f"{path} not found. This file is a DVC-tracked output of the "
-            "day-01 pipeline, not something day-02 generates. From the repo "
+            "task-1 pipeline, not something task-2 generates. From the repo "
             "root, run `dvc pull` (fetches it from the Floci S3 remote), "
-            "or `cd day-01 && dvc repro` to rebuild it from raw data."
+            "or `cd task-1 && dvc repro` to rebuild it from raw data."
         )
     df = pd.read_csv(path)
 
@@ -66,15 +66,15 @@ def load_cleaned_dataframe(path: Path = DAY01_CLEANED_CSV) -> pd.DataFrame:
     if missing_cols:
         raise ValueError(
             f"cleaned.csv is missing expected columns {sorted(missing_cols)}. "
-            "It may be stale or built from a different day-01 schema version; "
-            "re-run `dvc repro` in day-01."
+            "It may be stale or built from a different task-1 schema version; "
+            "re-run `dvc repro` in task-1."
         )
     null_counts = df[REQUIRED_COLUMNS].isnull().sum()
     bad = null_counts[null_counts > 0]
     if not bad.empty:
         raise ValueError(
             f"cleaned.csv has unexpected nulls in required columns: {bad.to_dict()}. "
-            "Day 1's cleaning step should have dropped these; treat this as a "
+            "Task 1's cleaning step should have dropped these; treat this as a "
             "signal the upstream pipeline output is stale or corrupted."
         )
     return df

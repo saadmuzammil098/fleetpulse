@@ -6,7 +6,7 @@ failures, useless for a fleet-ops decision. Every metric here is chosen to
 survive that imbalance and to reflect the actual cost asymmetry: a missed
 failure (false negative) risks a roadside breakdown or safety incident; a
 false alarm (false positive) costs one unneeded service visit. See the
-Day 2 README for the full justification.
+Task 2 README for the full justification.
 """
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ def render_evaluation_report(
     fp_rate = fp / (n_total - n_pos) if (n_total - n_pos) else float("nan")
 
     lines = [
-        "# Day 2 Evaluation Report — Component Failure Prediction",
+        "# Task 2 Evaluation Report — Component Failure Prediction",
         "",
         "## Cross-validation (training set only, 5-fold stratified)",
         f"- PR-AUC per fold: {[round(float(s), 3) for s in cv_pr_auc_scores]}",

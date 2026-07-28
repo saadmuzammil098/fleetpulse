@@ -41,7 +41,7 @@ def build_pipeline() -> Pipeline:
     only matters combined with low rotational speed) without manual
     feature crosses. The tradeoff is that raw forest probabilities are
     known to be poorly calibrated (they cluster away from 0 and 1), which
-    is exactly why Day 2's calibration step (src/train.py) isn't
+    is exactly why Task 2's calibration step (src/train.py) isn't
     decorative, it measurably changes the output probabilities here in a
     way it wouldn't for an already well-calibrated model like logistic
     regression.

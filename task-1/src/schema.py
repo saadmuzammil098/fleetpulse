@@ -1,7 +1,7 @@
 """Pandera schema: the data contract for cleaned FleetPulse telemetry.
 
 This is what "physically plausible sensor ranges" and "missing-reading
-rules" (Day 1 spec) actually mean in code: anything that fails this schema
+rules" (Task 1 spec) actually mean in code: anything that fails this schema
 is not safe to hand to a model.
 """
 import pandera.pandas as pa

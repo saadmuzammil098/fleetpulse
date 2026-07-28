@@ -1,25 +1,25 @@
-# FleetPulse — Day 1: Reproducible Data Pipeline for Fleet Telemetry
+# FleetPulse — Task 1: Reproducible Data Pipeline for Fleet Telemetry
 
-Day 1 of 30 in the [production AI/ML roadmap](../../30-day-ai-ml-roadmap-industry-portfolio.md), FleetPulse phase (automotive predictive maintenance, Days 1–10).
+Task 1 of 30 in the [production AI/ML roadmap](../../30-day-ai-ml-roadmap-industry-portfolio.md), FleetPulse phase (automotive predictive maintenance, Days 1–10).
 
 ## What this is
 
 FleetPulse ingests sensor telemetry from a fleet of vehicles/machines and will eventually
-predict component failure risk (that's Day 2 onward). Day 1's job is narrower and more
+predict component failure risk (that's Task 2 onward). Task 1's job is narrower and more
 foundational: get raw sensor data into a **reproducible, validated, versioned** state
 before any model ever touches it. See [architecture.md](./architecture.md) for the full
 pipeline diagram.
 
 ## Dataset: UCI AI4I 2020, not the literally-automotive Kaggle option
 
-The roadmap's Day 1 spec names two "most established run-to-failure sensor benchmarks":
+The roadmap's Task 1 spec names two "most established run-to-failure sensor benchmarks":
 NASA C-MAPSS (aircraft engines) or the **UCI AI4I 2020 Predictive Maintenance** dataset
 (10,000 rows of industrial machine sensor readings — air/process temperature, rotational
 speed, torque, tool wear — plus binary failure labels and failure-mode flags). Neither is
 literally automotive; the spec is explicit that the *methodology* — remaining-useful-life /
 failure-risk from sensor time-series — is what transfers, not the domain.
 
-A more literally car-shaped Kaggle dataset was considered and rejected for Day 1
+A more literally car-shaped Kaggle dataset was considered and rejected for Task 1
 specifically because it requires a Kaggle account and API token, which weren't set up on
 this machine, and the roadmap's own fallback guidance for that path is "availability there
 shifts, pick whichever is live" — i.e. it's explicitly a lower-priority option. UCI AI4I
@@ -57,7 +57,7 @@ this specific dataset, not a gap in the pipeline.
 - **`src/profile.py`** — a custom, dependency-light profiling report (column stats,
   categorical breakdown, failure-label class balance, missingness). Deliberately not
   ydata-profiling/pandas-profiling: those pull in a heavy, version-fragile dependency tree
-  for what Day 1 actually needs.
+  for what Task 1 actually needs.
 - **`src/pipeline.py`** — orchestrates all of the above; the single command the "done
   when" clause asks for.
 - **`src/break_it.py`** — the deliberate-breakage exercise, see below.
@@ -70,7 +70,7 @@ this specific dataset, not a gap in the pipeline.
 ```bash
 # from the repo root
 dvc pull                     # fetches ai4i2020.csv from the Floci-backed S3 remote
-cd fleetpulse/day-01
+cd fleetpulse/task-1
 source ../.venv/bin/activate
 dvc repro                    # the one command: ingest -> clean -> validate -> profile
 ```

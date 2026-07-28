@@ -1,6 +1,6 @@
-# Day 2 Break-It Demo
+# Task 2 Break-It Demo
 
-Three deliberate failures run against the Day 2 training pipeline: a label leak, a degenerate split, and a malformed prediction input. None of these run as part of `dvc repro`, this is a one-off exploration documenting what breaks and why.
+Three deliberate failures run against the Task 2 training pipeline: a label leak, a degenerate split, and a malformed prediction input. None of these run as part of `dvc repro`, this is a one-off exploration documenting what breaks and why.
 
 ## 1. Label leak: training on the failure-mode flags
 

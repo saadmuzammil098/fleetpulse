@@ -26,7 +26,7 @@ def validate_dataset(df: pd.DataFrame) -> tuple[bool, str, pd.DataFrame | None]:
 
 def _render_pass_report(df: pd.DataFrame) -> str:
     lines = [
-        "# FleetPulse Day 1 — Validation Report",
+        "# FleetPulse Task 1 — Validation Report",
         "",
         f"**Result:** PASSED",
         f"**Rows validated:** {len(df)}",
@@ -43,7 +43,7 @@ def _render_failure_report(df: pd.DataFrame, failure_cases: pd.DataFrame) -> str
     by_check = failure_cases.groupby(["column", "check"]).size().reset_index(name="count")
 
     lines = [
-        "# FleetPulse Day 1 — Validation Report",
+        "# FleetPulse Task 1 — Validation Report",
         "",
         f"**Result:** FAILED",
         f"**Rows checked:** {len(df)}",

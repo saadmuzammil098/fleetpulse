@@ -3,35 +3,35 @@ stages:
   train:
     cmd: python -m src.train
     deps:
-    - path: ../day-01/data/processed/cleaned.csv
+    - path: ../task-1/data/processed/cleaned.csv
       hash: md5
       md5: a95ce0898dba3421f0746ce57f326176
       size: 513908
     - path: src/evaluate.py
       hash: md5
-      md5: 5b89cda62d97057adbbf857c0f861a05
-      size: 6278
+      md5: ee66686876ed8e20474b5e31e143cb02
+      size: 6280
     - path: src/load_data.py
       hash: md5
-      md5: b1bbe9c1676904150612a901f09d7af7
-      size: 3807
+      md5: 327bd77378b8e10d58389b168fb682a4
+      size: 3813
     - path: src/pipeline.py
       hash: md5
-      md5: f8a16754188f47fe67fc3c0c1a811e20
-      size: 2333
+      md5: 9cc05b9239b8f2d34d8f8283bb31363a
+      size: 2334
     - path: src/train.py
       hash: md5
-      md5: 8767c42fc825a6a79a90ae6676ca3411
-      size: 5180
+      md5: 1f7fefb2e665e03032e52851281b9375
+      size: 5182
     outs:
     - path: models/model.joblib
       hash: md5
-      md5: aeb4022d09cb055777caf5d7aaf221f0
+      md5: c094b3308f0454b5a3ef636d6464d3f9
       size: 17521939
     - path: reports/evaluation_report.md
       hash: md5
-      md5: a22b572d2f1039821426d94f38419a81
-      size: 2196
+      md5: e7e086a5be9e6d1e08d4964767e5cfab
+      size: 2197
     - path: reports/metrics.json
       hash: md5
       md5: 829f05f4034b14a15d22c28387c3453a

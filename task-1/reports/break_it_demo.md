@@ -1,4 +1,4 @@
-# FleetPulse Day 1 — Break-It Demo
+# FleetPulse Task 1 — Break-It Demo
 
 10-row synthetic fixture (the real AI4I 2020 data has zero faults, so it never exercises this code): 6 rows each carry one isolated, deliberate fault (missing value, impossible temperature, negative speed, absurd tool wear, invalid category, bad timestamp string), the remaining 4 rows are an untouched control group. Goal: every corrupted row gets caught somewhere in the pipeline; every clean row survives all the way to a passing validation.
 

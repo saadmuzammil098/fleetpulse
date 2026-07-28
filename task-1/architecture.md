@@ -1,4 +1,4 @@
-# FleetPulse Day 1 — Architecture
+# FleetPulse Task 1 — Architecture
 
 ```mermaid
 flowchart TD

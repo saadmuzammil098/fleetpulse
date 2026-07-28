@@ -1,6 +1,6 @@
-"""Deliberately break the Day 2 pipeline three ways and record what happens.
+"""Deliberately break the Task 2 pipeline three ways and record what happens.
 
-Run as `python -m src.break_it` from day-02/. Writes reports/break_it_demo.md.
+Run as `python -m src.break_it` from task-2/. Writes reports/break_it_demo.md.
 Doesn't touch models/model.joblib or the real metrics/report, this is a
 side experiment, not part of the reproducible `dvc repro` train stage.
 """
@@ -29,7 +29,7 @@ def demo_label_leak() -> str:
     """
     X, y = build_dataset()
     leaked_features = pd.read_csv(
-        Path(__file__).resolve().parents[2] / "day-01" / "data" / "processed" / "cleaned.csv"
+        Path(__file__).resolve().parents[2] / "task-1" / "data" / "processed" / "cleaned.csv"
     )[LEAKY_FAILURE_MODE_COLUMNS]
     X_leaked = pd.concat([X.reset_index(drop=True), leaked_features.reset_index(drop=True)], axis=1)
 
@@ -198,8 +198,8 @@ def demo_bad_input() -> str:
 def main() -> None:
     sections = [demo_label_leak(), demo_degenerate_split(), demo_bad_input()]
     report = (
-        "# Day 2 Break-It Demo\n\n"
-        "Three deliberate failures run against the Day 2 training pipeline: "
+        "# Task 2 Break-It Demo\n\n"
+        "Three deliberate failures run against the Task 2 training pipeline: "
         "a label leak, a degenerate split, and a malformed prediction input. "
         "None of these run as part of `dvc repro`, this is a one-off "
         "exploration documenting what breaks and why.\n\n"

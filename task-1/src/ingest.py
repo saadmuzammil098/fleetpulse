@@ -1,7 +1,7 @@
-"""Raw data ingestion for FleetPulse Day 1.
+"""Raw data ingestion for FleetPulse Task 1.
 
 Loads the UCI AI4I 2020 Predictive Maintenance dataset, standing in for
-per-vehicle sensor telemetry (see day-01/README.md for the mapping and why
+per-vehicle sensor telemetry (see task-1/README.md for the mapping and why
 this dataset was chosen over the literally-automotive alternative).
 """
 from pathlib import Path

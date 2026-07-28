@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 
 # Physically plausible sensor ranges, derived from the observed data with a
-# margin, not invented numbers. See day-01/README.md for the reasoning.
+# margin, not invented numbers. See task-1/README.md for the reasoning.
 SENSOR_RANGES = {
     "air_temperature_k": (280.0, 320.0),
     "process_temperature_k": (285.0, 330.0),
@@ -25,7 +25,7 @@ def handle_missing_values(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Drop rows missing a required sensor reading; report how many/why.
 
     A missing sensor reading can't be safely imputed for a physical
-    quantity like torque or tool wear without domain modeling, so Day 1
+    quantity like torque or tool wear without domain modeling, so Task 1
     drops and reports rather than guessing.
     """
     required = list(SENSOR_RANGES.keys()) + ["unit_id", "product_id", "type"]

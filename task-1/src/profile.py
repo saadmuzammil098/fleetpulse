@@ -1,7 +1,7 @@
 """Lightweight, dependency-free profiling report for the cleaned dataset.
 
 Deliberately not ydata-profiling/pandas-profiling: those pull in a heavy,
-version-fragile dependency tree for what Day 1 actually needs, a clear
+version-fragile dependency tree for what Task 1 actually needs, a clear
 per-column summary of shape, missingness, distribution, and failure-label
 balance. Custom and ~80 lines beats a fragile heavyweight dependency here.
 """
@@ -20,7 +20,7 @@ NUMERIC_COLUMNS = [
 
 def generate_profile_report(df: pd.DataFrame, clean_report: dict) -> str:
     lines = [
-        "# FleetPulse Day 1 — Data Profile Report",
+        "# FleetPulse Task 1 — Data Profile Report",
         "",
         f"**Rows:** {len(df)}  ",
         f"**Columns:** {len(df.columns)}  ",
@@ -57,9 +57,9 @@ def generate_profile_report(df: pd.DataFrame, clean_report: dict) -> str:
         "",
         "## Failure-label balance",
         "",
-        "This is the class imbalance any Day 2 model has to handle: failures "
+        "This is the class imbalance any Task 2 model has to handle: failures "
         "are rare relative to healthy readings, which is exactly why the "
-        "roadmap's Day 2 spec calls for recall-weighted or PR-AUC metrics "
+        "roadmap's Task 2 spec calls for recall-weighted or PR-AUC metrics "
         "instead of raw accuracy.",
         "",
         df["machine_failure"].value_counts().rename_axis("machine_failure").reset_index(name="count").to_markdown(index=False),

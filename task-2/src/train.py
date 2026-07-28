@@ -1,7 +1,7 @@
-"""Orchestrates Day 2: load -> split -> CV -> calibrate -> evaluate -> save.
+"""Orchestrates Task 2: load -> split -> CV -> calibrate -> evaluate -> save.
 
-Run as `python -m src.train` from day-02/. This is the "one command" the
-Day 2 done-when clause asks for.
+Run as `python -m src.train` from task-2/. This is the "one command" the
+Task 2 done-when clause asks for.
 """
 from __future__ import annotations
 

@@ -81,7 +81,7 @@ def main() -> None:
 
     n_total = len(bad_df)
     lines = [
-        "# FleetPulse Day 1 — Break-It Demo",
+        "# FleetPulse Task 1 — Break-It Demo",
         "",
         f"{n_total}-row synthetic fixture (the real AI4I 2020 data has zero "
         "faults, so it never exercises this code): 6 rows each carry one "

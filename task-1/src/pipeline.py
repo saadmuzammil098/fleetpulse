@@ -1,10 +1,10 @@
-"""FleetPulse Day 1 pipeline: raw CSV -> cleaned, validated dataset + reports.
+"""FleetPulse Task 1 pipeline: raw CSV -> cleaned, validated dataset + reports.
 
-The single command Day 1's "done when" clause asks for:
+The single command Task 1's "done when" clause asks for:
 
     python -m src.pipeline
 
-Run from day-01/, after `dvc pull` from the repo root. Deterministic: same
+Run from task-1/, after `dvc pull` from the repo root. Deterministic: same
 input, same code -> byte-identical cleaned.csv and reports every time,
 which is what lets `dvc repro` prove reproducibility by checksum.
 """

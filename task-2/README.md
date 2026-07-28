@@ -1,8 +1,8 @@
-# FleetPulse — Day 2: Component Failure Prediction
+# FleetPulse — Task 2: Component Failure Prediction
 
-Day 2 of 30 in the [production AI/ML roadmap](../../30-day-ai-ml-roadmap-industry-portfolio.md),
-FleetPulse phase. Day 1 built a reproducible, validated, DVC-versioned
-telemetry dataset ([day-01](../day-01/)); Day 2 trains the first model on
+Task 2 of 30 in the [production AI/ML roadmap](../../30-day-ai-ml-roadmap-industry-portfolio.md),
+FleetPulse phase. Task 1 built a reproducible, validated, DVC-versioned
+telemetry dataset ([task-1](../task-1/)); Task 2 trains the first model on
 top of it: predicting the probability a given component fails, framed as
 the real fleet-ops decision it is, not a leaderboard exercise.
 
@@ -10,12 +10,12 @@ the real fleet-ops decision it is, not a leaderboard exercise.
 
 A model that scores each machine's current sensor snapshot with a
 failure probability and turns that into a service-or-don't decision. The
-dataset (UCI AI4I 2020, carried over from Day 1) is 10,000 industrial
+dataset (UCI AI4I 2020, carried over from Task 1) is 10,000 industrial
 machine snapshots with a binary `machine_failure` label and 5 failure-mode
 flags (`twf`, `hdf`, `pwf`, `osf`, `rnf`) recording *which* failure
 occurred.
 
-**Honest limitation, same spirit as Day 1's:** this dataset has no
+**Honest limitation, same spirit as Task 1's:** this dataset has no
 censored time-to-event data, it's per-unit snapshots, not a run-to-failure
 time series. So "predict failure within the next N operating hours" is
 operationalized here as: predict `machine_failure` from the current sensor
@@ -28,8 +28,8 @@ survival/time-to-failure formulation.
 
 ## Build
 
-- **`src/load_data.py`** — loads Day 1's cleaned, validated CSV directly
-  (no re-cleaning, no re-validation, that's Day 1's job and it's already
+- **`src/load_data.py`** — loads Task 1's cleaned, validated CSV directly
+  (no re-cleaning, no re-validation, that's Task 1's job and it's already
   proven). Defines the feature set and, just as importantly, names and
   excludes `twf/hdf/pwf/osf/rnf` as `LEAKY_FAILURE_MODE_COLUMNS`: these
   are how the label decomposes, not predictors available before a
@@ -52,9 +52,9 @@ survival/time-to-failure formulation.
   recall, precision, Brier score, confusion matrix) and the human-readable
   evaluation report.
 - **`src/break_it.py`** — three deliberate failures, see below.
-- **`dvc.yaml`/`dvc.lock`** — one stage, `train`, depending on Day 1's
+- **`dvc.yaml`/`dvc.lock`** — one stage, `train`, depending on Task 1's
   `cleaned.csv` (via a relative cross-directory path, DVC resolves it
-  through Day 1's own `dvc.yaml`/lock) and all of day-02's `src/*.py`;
+  through Task 1's own `dvc.yaml`/lock) and all of task-2's `src/*.py`;
   producing `models/model.joblib`, `reports/metrics.json`, and
   `reports/evaluation_report.md` as tracked, checksum-verified outputs.
 
@@ -178,17 +178,17 @@ model's own stated confidence trustworthy.
 
 ```bash
 # from the repo root, fresh clone
-dvc pull                     # fetches day-01's cleaned.csv AND day-02's
+dvc pull                     # fetches task-1's cleaned.csv AND task-2's
                               # model/report cache entries from the
                               # Floci-backed S3 remote
-cd fleetpulse/day-02
+cd fleetpulse/task-2
 source ../.venv/bin/activate
 dvc repro                    # the one command: load -> split -> CV ->
                               # calibrate -> evaluate -> save
 ```
 
-`dvc repro` is checksum-aware against both day-02's own `src/*.py` files
-and day-01's `cleaned.csv`, change either and it retrains; change neither
+`dvc repro` is checksum-aware against both task-2's own `src/*.py` files
+and task-1's `cleaned.csv`, change either and it retrains; change neither
 and it prints `Stage 'train' didn't change, skipping`.
 
 ```bash
