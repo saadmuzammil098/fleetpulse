@@ -1,0 +1,13 @@
+stages:
+  train:
+    cmd: python -m src.train
+    deps:
+      - ../day-01/data/processed/cleaned.csv
+      - src/load_data.py
+      - src/pipeline.py
+      - src/evaluate.py
+      - src/train.py
+    outs:
+      - models/model.joblib
+      - reports/evaluation_report.md
+      - reports/metrics.json
