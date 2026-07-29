@@ -1,0 +1,63 @@
+schema: '2.0'
+stages:
+  experiment_tracking:
+    cmd: python -m src.run_all
+    deps:
+    - path: ../task-1/data/processed/cleaned.csv
+      hash: md5
+      md5: a95ce0898dba3421f0746ce57f326176
+      size: 513908
+    - path: src/config.py
+      hash: md5
+      md5: b7dd5122e5b755c6ad4342077871b2fb
+      size: 625
+    - path: src/features.py
+      hash: md5
+      md5: 4687819926617a71cf92eff2072b4ae8
+      size: 5303
+    - path: src/load_data.py
+      hash: md5
+      md5: 0a5ac4231f3674d78b787a33f6ed87ae
+      size: 3138
+    - path: src/metrics.py
+      hash: md5
+      md5: 8d1f7a6c09f3d1696d7a158fb5afe890
+      size: 2703
+    - path: src/pipeline.py
+      hash: md5
+      md5: bbbf0453dff48bd31cc7009529a29cee
+      size: 1909
+    - path: src/promote.py
+      hash: md5
+      md5: 16dd6516e7a0b3e14c956a0aeca48268
+      size: 5669
+    - path: src/run_all.py
+      hash: md5
+      md5: fd66a312c0b2e53beb42b7c912844e80
+      size: 878
+    - path: src/run_experiments.py
+      hash: md5
+      md5: 91a662e945caa0d8d262e6019bd4677f
+      size: 10372
+    outs:
+    - path: mlartifacts/
+      hash: md5
+      md5: b612c36916d038112f7eb02ff9f6e70d.dir
+      size: 202842879
+      nfiles: 120
+    - path: mlflow.db
+      hash: md5
+      md5: 9c4721dac02c52b373322b15cdc24543
+      size: 974848
+    - path: reports/leaderboard.md
+      hash: md5
+      md5: 7175045693a478ec19ef02497cb613bb
+      size: 1331
+    - path: reports/promotion_rationale.md
+      hash: md5
+      md5: 2d51518199908f572e7dedbb1dabc98f
+      size: 1645
+    - path: reports/run_ids.json
+      hash: md5
+      md5: 1f13aaf3b5041a04788eb6d53c64fc20
+      size: 1075

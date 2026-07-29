@@ -1,0 +1,19 @@
+stages:
+  experiment_tracking:
+    cmd: python -m src.run_all
+    deps:
+      - ../task-1/data/processed/cleaned.csv
+      - src/config.py
+      - src/features.py
+      - src/load_data.py
+      - src/pipeline.py
+      - src/metrics.py
+      - src/run_experiments.py
+      - src/promote.py
+      - src/run_all.py
+    outs:
+      - mlflow.db
+      - mlartifacts/
+      - reports/leaderboard.md
+      - reports/promotion_rationale.md
+      - reports/run_ids.json
