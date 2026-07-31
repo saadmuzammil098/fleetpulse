@@ -14,6 +14,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 2 | [`task-2/`](./task-2) | Calibrated component-failure prediction model (sklearn Pipeline, CV, recall-weighted metrics) trained on Task 1's dataset |
 | 3 | [`task-3/`](./task-3) | MLflow experiment tracking (12 runs) and model registry promotion, plus a single shared rolling-window feature module used identically by training and a mock real-time inference call |
 | 4 | [`task-4/`](./task-4) | Fleet Health Risk API (FastAPI) serving Task 3's registered model, with Pydantic boundary validation and structured logging |
+| 5 | [`task-5/`](./task-5) | Docker refresher and hardening: multi-stage Dockerfile for Task 4's API (non-root, BuildKit cache, HEALTHCHECK, Trivy-scanned), docker-compose with Postgres + Prometheus + Grafana |
 
 ## Architecture
 
@@ -64,8 +65,12 @@ request.
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install pandas pandera great-expectations dvc dvc-s3 mlflow fastapi uvicorn
+pip install pandas pandera great-expectations dvc dvc-s3 mlflow fastapi uvicorn prometheus-fastapi-instrumentator
 ```
+
+Task 5 additionally needs Docker Desktop (or another Docker Engine +
+Compose v2) — see [`task-5/README.md`](./task-5) for the containerized
+setup.
 
 DVC is configured against a Floci-emulated S3 bucket (`s3://fleetpulse-dvc`) as its
 remote — `dvc push`/`dvc pull` behave exactly as they would against real AWS S3, no

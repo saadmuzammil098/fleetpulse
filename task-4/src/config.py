@@ -5,10 +5,20 @@ registry Task 4 serves from is the registry Task 3 built, not a copy of it.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 TASK4_ROOT = Path(__file__).resolve().parents[1]
-TASK3_ROOT = TASK4_ROOT.parent / "task-3"
+
+# Local-process default: task-3/ as a sibling directory. Overridable via
+# FLEETPULSE_TASK3_ROOT for the Task 5 container, where task-3's MLflow
+# store isn't necessarily reachable at that relative path — see
+# task-5/README.md's "why the model isn't baked in" for the full reason
+# (MLflow's local file-based artifact store records an *absolute* path in
+# mlflow.db at logging time, so the mount location has to match wherever
+# that path resolves, not just live at a fixed relative offset from this
+# file).
+TASK3_ROOT = Path(os.environ.get("FLEETPULSE_TASK3_ROOT", str(TASK4_ROOT.parent / "task-3")))
 
 MLFLOW_DB_PATH = TASK3_ROOT / "mlflow.db"
 MLFLOW_TRACKING_URI = f"sqlite:///{MLFLOW_DB_PATH}"

@@ -1,0 +1,81 @@
+name: fleetpulse
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: task-5/Dockerfile
+    image: fleetpulse-api:latest
+    ports:
+      - "8811:8811"
+    environment:
+      # MLflow's local file-based artifact store records an *absolute*
+      # host path in mlflow.db at logging time (see README "why the model
+      # isn't baked in"), so task-3 has to be mounted at that same
+      # absolute path inside the container, not at an arbitrary one —
+      # this tells task-4/src/config.py where that turned out to be.
+      FLEETPULSE_TASK3_ROOT: ${HOST_TASK3_PATH:?run via ./run_stack.sh, which sets this}
+    volumes:
+      # NOT read-only, deliberately — see README "why the model isn't
+      # baked in": mlflow.sklearn.load_model() against a *local
+      # file-based* artifact store writes a small `registered_model_meta`
+      # bookkeeping YAML back into the artifact directory on every load,
+      # a real mlflow behavior, not something this app's code does. A
+      # read-only mount here throws on startup. Mounted at task-3's real
+      # host path (not /app/task-3) for the absolute-path reason above.
+      - ${HOST_TASK3_PATH:?run via ./run_stack.sh, which sets this}:${HOST_TASK3_PATH:?run via ./run_stack.sh, which sets this}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8811/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fleetpulse
+      POSTGRES_PASSWORD: fleetpulse
+      POSTGRES_DB: fleetpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleetpulse"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:

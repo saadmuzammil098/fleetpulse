@@ -1,0 +1,13 @@
+# Pinned to the versions already validated against task-4's app in the
+# shared repo-root .venv (see fleetpulse/README.md's Setup section) — this
+# file exists only so the Docker build is reproducible without needing the
+# whole shared venv inside the image.
+fastapi==0.140.13
+uvicorn==0.51.0
+pydantic==2.13.4
+mlflow==3.14.0
+pandas==2.3.3
+scikit-learn==1.9.0
+numpy==2.5.1
+scipy==1.18.0
+prometheus-fastapi-instrumentator==8.1.0

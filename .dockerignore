@@ -1,0 +1,15 @@
+.git
+.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+
+# Model artifacts are mounted read-only at runtime (see task-5/README.md),
+# never baked into the image — excluding them keeps the build context
+# small and the build fast.
+task-3/mlartifacts
+task-3/mlflow.db
+task-1/data
+task-2/models
+
+task-5/reports

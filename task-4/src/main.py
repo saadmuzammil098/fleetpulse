@@ -15,6 +15,7 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from . import inference, model_registry
 from .logging_config import configure_logging
@@ -28,6 +29,12 @@ app = FastAPI(
     description="Serves Task 3's registered component-failure model as a real API.",
     version="1.0.0",
 )
+
+# Task 5 addition: expose /metrics for the Prometheus service in
+# task-5/docker-compose.yml — request counts, latencies, status codes,
+# broken down by path, with zero application code changes beyond this
+# one call.
+Instrumentator().instrument(app).expose(app)
 
 
 @app.on_event("startup")
