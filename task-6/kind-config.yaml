@@ -1,0 +1,21 @@
+# Kind cluster config for the Task 6 "by-hand Kubernetes" exercise.
+#
+# extraMounts bind-mounts task-3's MLflow store (mlflow.db + mlartifacts)
+# into the control-plane node at the *same absolute host path* it lives at
+# on the Mac. This isn't a Kind quirk to work around, it's the same
+# constraint task-5/README.md documents for docker-compose: MLflow's local
+# file-based artifact store bakes an absolute host path into mlflow.db at
+# logging time, so wherever this data is mounted inside a container has to
+# match that baked-in path exactly, or mlflow.sklearn.load_model() can't
+# resolve its own artifact URI. Kind nodes are themselves containers, so
+# without this mount the node has no access to the Mac's filesystem at all
+# — the pod's hostPath volume (manifests/03-deployment.yaml) reads from
+# this mounted path *inside the node*, not from the Mac directly.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: fleetpulse
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3
+        containerPath: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3

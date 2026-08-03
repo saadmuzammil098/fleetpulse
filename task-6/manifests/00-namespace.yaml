@@ -1,0 +1,8 @@
+# All Task 6 objects live in their own namespace rather than `default` —
+# a deliberate, small piece of hygiene: `kubectl get pods -n fleetpulse`
+# reads cleanly, and deleting this one namespace tears down everything
+# Task 6 created without touching anything else in the cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleetpulse

@@ -1,0 +1,14 @@
+# ClusterIP — no ingress yet, that's a later day. Reached for now via
+# `kubectl port-forward`, see README.
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-health-api
+  namespace: fleetpulse
+spec:
+  type: ClusterIP
+  selector:
+    app: fleet-health-api
+  ports:
+    - port: 8811
+      targetPort: 8811

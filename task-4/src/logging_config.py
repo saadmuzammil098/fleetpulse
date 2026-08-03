@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 import time
 
@@ -34,7 +35,14 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str)
 
 
-def configure_logging(level: int = logging.INFO) -> None:
+def configure_logging(level: int | None = None) -> None:
+    # Task 6 addition: LOG_LEVEL is real, operator-facing config (the
+    # Task 6 ConfigMap sets it) — not a hardcoded default pretending to be
+    # configurable. Falls back to INFO if unset or unrecognized, same as
+    # before this env lookup existed.
+    if level is None:
+        level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
 

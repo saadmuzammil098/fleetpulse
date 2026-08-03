@@ -1,0 +1,68 @@
+# Hand-written Deployment for the Task 5 image (fleetpulse-api:latest),
+# no `kubectl create deployment`, no Helm.
+#
+# Deliberately left out of scope for Task 6, per the roadmap's own
+# phasing (Day 7 — "Kubernetes production patterns" — owns these):
+# resource requests/limits, liveness/readiness/startup probes, and an
+# HPA. Task 6 is about the bare mechanics — Deployment -> ReplicaSet ->
+# Pod, and watching the controller replace a pod you killed yourself —
+# not about production hardening yet.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-health-api
+  namespace: fleetpulse
+  labels:
+    app: fleet-health-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fleet-health-api
+  template:
+    metadata:
+      labels:
+        app: fleet-health-api
+    spec:
+      containers:
+        - name: fleet-health-api
+          image: fleetpulse-api:latest
+          # IfNotPresent, not the default Always: this image was loaded
+          # straight into the Kind node via `kind load docker-image`, not
+          # pushed to any registry. Always would make kubelet try (and
+          # fail) to pull fleetpulse-api:latest from Docker Hub instead of
+          # using the image already sitting on the node.
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8811
+          envFrom:
+            - configMapRef:
+                name: fleet-health-api-config
+            - secretRef:
+                name: fleet-health-api-secret
+          volumeMounts:
+            # Mounted at the *same* absolute path as the hostPath below —
+            # required, not a style choice: task-4/src/config.py resolves
+            # TASK3_ROOT from FLEETPULSE_TASK3_ROOT (the ConfigMap value),
+            # and MLflow's mlflow.db has that same absolute path baked
+            # into its stored artifact_location (see 01-configmap.yaml).
+            # A different mount point inside the container would make
+            # that stored URI unresolvable, same failure mode task-5's
+            # README documents for docker-compose.
+            - name: task3-store
+              mountPath: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3
+              # Not readOnly: mlflow.sklearn.load_model() against a local
+              # file-based artifact store writes a small
+              # registered_model_meta bookkeeping file back into the
+              # artifact directory on every load (mlflow's own behavior,
+              # not this app's) — a read-only mount throws on startup,
+              # same discovery documented in task-5/README.md.
+      volumes:
+        - name: task3-store
+          hostPath:
+            # Resolves inside the *Kind node*, not the Mac directly — the
+            # node only sees this path because ../kind-config.yaml's
+            # extraMounts bind-mounted the real Mac path here when the
+            # cluster was created.
+            path: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3
+            type: Directory

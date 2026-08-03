@@ -1,0 +1,28 @@
+# Non-secret config the API actually reads from the environment.
+#
+# FLEETPULSE_TASK3_ROOT — read by task-4/src/config.py. Has to match the
+# absolute path baked into task-3/mlflow.db by MLflow's local file-based
+# artifact store at logging time (see task-5/README.md, "why the model
+# isn't baked in") — this is the same absolute-path mount constraint
+# task-5's docker-compose worked around, now via a hostPath volume
+# (03-deployment.yaml) fed by the Kind node's extraMounts (../kind-config.yaml)
+# instead of a bind mount.
+#
+# LOG_LEVEL — read by task-4/src/logging_config.py (added in this task;
+# previously hardcoded to INFO with no env override). A real, load-bearing
+# config value, not a placeholder — deliberately left out of this
+# ConfigMap: a "MODEL_VERSION" key, since the API doesn't take that from
+# config at all. The served model version is whatever currently carries
+# the `production` alias in Task 3's MLflow registry (task-4/src/model_registry.py)
+# — that's a single source of truth by design (a re-promotion in Task 3
+# changes what this API serves with no redeploy), and duplicating it into
+# a ConfigMap the app never reads would just be a second, driftable copy
+# of the same fact.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-health-api-config
+  namespace: fleetpulse
+data:
+  FLEETPULSE_TASK3_ROOT: "/Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3"
+  LOG_LEVEL: "INFO"
