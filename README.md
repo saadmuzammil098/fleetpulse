@@ -15,6 +15,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 3 | [`task-3/`](./task-3) | MLflow experiment tracking (12 runs) and model registry promotion, plus a single shared rolling-window feature module used identically by training and a mock real-time inference call |
 | 4 | [`task-4/`](./task-4) | Fleet Health Risk API (FastAPI) serving Task 3's registered model, with Pydantic boundary validation and structured logging |
 | 5 | [`task-5/`](./task-5) | Docker refresher and hardening: multi-stage Dockerfile for Task 4's API (non-root, BuildKit cache, HEALTHCHECK, Trivy-scanned), docker-compose with Postgres + Prometheus + Grafana |
+| 6 | [`task-6/`](./task-6) | Kubernetes fundamentals, by hand: hand-written Deployment/Service/ConfigMap/Secret manifests deploying Task 5's image to a local Kind cluster, `kubectl` fluency, and a documented self-healing test (delete a pod, watch the ReplicaSet controller replace it) |
 
 ## Architecture
 
@@ -49,6 +50,18 @@ flowchart LR
 
     client(["Fleet-ops dashboard"]) -- "POST /predict\ntelemetry window" --> api
     api -- "risk score +\nrecommended action" --> client
+
+    subgraph T6["Task 6 — Deploy (local k8s)"]
+        img[("fleetpulse-api:latest\nTask 5 image, reused")] --> kindload["kind load docker-image"]
+        kindload --> deploy["Deployment\nreplicas: 2"]
+        deploy --> pods["Pods\n(api + shared_features + registry loader)"]
+        cm[["ConfigMap\nFLEETPULSE_TASK3_ROOT, LOG_LEVEL"]] --> pods
+        sec[["Secret\nplaceholder token"]] --> pods
+        pods --> svc["Service\nClusterIP :8811"]
+    end
+
+    api -.->|"same image,\nno rebuild"| img
+    svc -- "kubectl port-forward" --> client
 ```
 
 Each task hands the next one a durable artifact, not a shared in-process
@@ -71,6 +84,10 @@ pip install pandas pandera great-expectations dvc dvc-s3 mlflow fastapi uvicorn 
 Task 5 additionally needs Docker Desktop (or another Docker Engine +
 Compose v2) — see [`task-5/README.md`](./task-5) for the containerized
 setup.
+
+Task 6 additionally needs `kind` and `kubectl` (both installable via
+`brew install kind kubectl`) — see [`task-6/README.md`](./task-6) for
+the cluster setup, hand-written manifests, and the self-healing demo.
 
 DVC is configured against a Floci-emulated S3 bucket (`s3://fleetpulse-dvc`) as its
 remote — `dvc push`/`dvc pull` behave exactly as they would against real AWS S3, no
