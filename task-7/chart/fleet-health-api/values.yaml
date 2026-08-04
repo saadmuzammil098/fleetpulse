@@ -1,0 +1,68 @@
+# Base defaults for the fleet-health-api chart. values-dev.yaml and
+# values-prod.yaml only override what actually differs between the two —
+# everything else (mount paths, probe mechanics, service port) is
+# identical in both environments and lives here once.
+
+image:
+  repository: fleetpulse-api
+  tag: latest
+  pullPolicy: IfNotPresent  # image is kind-loaded / floci-loaded, never pulled from a registry
+
+replicaCount: 2
+
+namespace:
+  create: true
+  name: fleetpulse
+
+# Same absolute-path hostPath constraint documented in task-6/README.md:
+# MLflow's local SQLite store bakes this exact absolute path into
+# mlflow.db at logging time, so the mount point can't move without
+# breaking mlflow.sklearn.load_model()'s artifact URI resolution.
+task3Root: "/Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3"
+
+logLevel: INFO
+mlflowTrackingToken: placeholder-not-a-real-token
+
+# Sized from watching `kubectl top pod` under both idle and `hey`-driven
+# load (see task-7/README.md "sizing resources" and reports/load_test.md)
+# rather than guessed placeholder values: idle RSS after model load sits
+# in the ~150-200Mi range (a loaded sklearn Pipeline + MLflow client
+# metadata), CPU idle is near zero and spikes briefly per /predict call.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  startup:
+    # 30 x 2s = 60s budget for FastAPI's startup event (model_registry.load_model())
+    # to finish before liveness/readiness even start being evaluated —
+    # uvicorn doesn't accept any connection, including /health, until that
+    # event completes, so this has to be generous, not tight.
+    periodSeconds: 2
+    failureThreshold: 30
+    timeoutSeconds: 2
+  liveness:
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+
+ingress:
+  enabled: true
+  className: nginx
+  host: fleetpulse.local
+  annotations: {}
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+  scaleDownStabilizationSeconds: 60

@@ -1,0 +1,102 @@
+# Task 7 hardening of task-6/manifests/03-deployment.yaml: same envFrom /
+# hostPath mechanics (see values.yaml for why the MLflow mount is still an
+# absolute-path hostPath), now with probes and resource limits that Task 6
+# deliberately left out of scope.
+#
+# Probe design is tuned to what /health actually does (task-4/src/main.py):
+# it ALWAYS returns HTTP 200, even when the model failed to load — the
+# body's `model_loaded` field is what actually distinguishes ok from
+# model_unavailable, the status code alone doesn't. So:
+#   - startupProbe / livenessProbe use httpGet: any 200 response means the
+#     ASGI server is up and answering, which is all "is the process alive"
+#     needs to mean. A liveness probe that also checked model_loaded would
+#     restart a perfectly healthy pod if the model ever failed to reload,
+#     which is the wrong response to a data problem, not a process problem.
+#   - readinessProbe uses an exec probe (python + urllib + json, both
+#     already in the runtime image, no curl needed) that specifically
+#     checks model_loaded — this is the one probe where the distinction
+#     matters, because it's the one that decides whether the Service
+#     sends traffic to this pod at all.
+# startupProbe exists because model_registry.load_model() runs inside
+# FastAPI's startup event, which blocks uvicorn from accepting ANY
+# connection (including /health) until the MLflow load finishes — without
+# a startupProbe's generous initial budget, liveness's tighter timing
+# would flag a still-loading pod as unhealthy and restart it before it
+# ever got a chance to finish loading.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-health-api
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "fleet-health-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.hpa.enabled }}
+  # Omitted when the HPA is enabled: once the HPA exists it owns
+  # spec.replicas (visible as its own field manager on the /scale
+  # subresource), and Helm re-asserting a fixed replicaCount on every
+  # upgrade fights the HPA for ownership of that field — surfaced here as
+  # a real `UPGRADE FAILED: conflict ... with "kube-controller-manager"`
+  # error on `helm upgrade`, not a hypothetical.
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: fleet-health-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: fleet-health-api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: fleet-health-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8811
+              name: http
+          envFrom:
+            - configMapRef:
+                name: fleet-health-api-config
+            - secretRef:
+                name: fleet-health-api-secret
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import json,sys,urllib.request as u; sys.exit(0 if json.load(u.urlopen('http://127.0.0.1:8811/health', timeout=2)).get('model_loaded') else 1)"
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          volumeMounts:
+            - name: task3-store
+              mountPath: {{ .Values.task3Root }}
+      volumes:
+        - name: task3-store
+          hostPath:
+            path: {{ .Values.task3Root }}
+            type: Directory

@@ -1,0 +1,25 @@
+# Prod overrides — more headroom per pod, a wider HPA range, and the
+# standard (not sped-up) scale-down stabilization window so a transient
+# dip in load doesn't thrash replica count. Only the keys that actually
+# differ from values.yaml are listed here.
+
+replicaCount: 3
+
+logLevel: INFO
+
+ingress:
+  host: fleetpulse.local
+
+hpa:
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+  scaleDownStabilizationSeconds: 300  # k8s default — avoid flapping on production traffic
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 320Mi
+  limits:
+    cpu: 750m
+    memory: 640Mi

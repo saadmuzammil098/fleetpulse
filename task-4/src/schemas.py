@@ -109,3 +109,4 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     model_name: str | None = None
     model_version: str | None = None
+    api_version: str | None = None

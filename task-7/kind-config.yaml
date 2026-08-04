@@ -1,0 +1,31 @@
+# Task 7's Kind cluster config — same extraMounts constraint as
+# task-6/kind-config.yaml (MLflow's SQLite store bakes in an absolute
+# host path, so task-3/ has to land at the identical path inside the
+# node), plus two things Task 6 didn't need:
+#
+# - `ingress-ready=true` label + `extraPortMappings` for 80/443: this is
+#   Kind's documented way of exposing a NodePort-backed ingress controller
+#   on the host without a cloud load balancer. ingress-nginx's Kind-
+#   flavored manifest specifically looks for this label to decide where
+#   to schedule itself.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: fleetpulse
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3
+        containerPath: /Users/saadmuzammil/Documents/30-day AI plan/fleetpulse/task-3
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

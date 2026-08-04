@@ -27,7 +27,12 @@ logger = logging.getLogger("fleet_health_api")
 app = FastAPI(
     title="FleetPulse — Fleet Health Risk API",
     description="Serves Task 3's registered component-failure model as a real API.",
-    version="1.0.0",
+    # Task 7's rolling-update demo: bumped 1.0.0 -> 1.1.0, exposed on
+    # /health as api_version, specifically so a curl loop running through
+    # the rolling update can watch this value flip cleanly with zero
+    # failed requests instead of having to infer the rollout from pod
+    # names alone.
+    version="1.1.0",
 )
 
 # Task 5 addition: expose /metrics for the Prometheus service in
@@ -82,6 +87,7 @@ def health() -> HealthResponse:
         model_loaded=loaded,
         model_name=model_registry.config.REGISTERED_MODEL_NAME if loaded else None,
         model_version=str(version) if loaded and version is not None else None,
+        api_version=app.version,
     )
 
 

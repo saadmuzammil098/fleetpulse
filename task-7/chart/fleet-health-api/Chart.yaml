@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fleet-health-api
+description: FleetPulse Fleet Health Risk API — Helm chart (Task 7 hardening of Task 6's hand-written manifests)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

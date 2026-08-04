@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-health-api-config
+  namespace: {{ .Values.namespace.name }}
+data:
+  FLEETPULSE_TASK3_ROOT: {{ .Values.task3Root | quote }}
+  LOG_LEVEL: {{ .Values.logLevel | quote }}

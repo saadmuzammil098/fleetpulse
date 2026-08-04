@@ -16,6 +16,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 4 | [`task-4/`](./task-4) | Fleet Health Risk API (FastAPI) serving Task 3's registered model, with Pydantic boundary validation and structured logging |
 | 5 | [`task-5/`](./task-5) | Docker refresher and hardening: multi-stage Dockerfile for Task 4's API (non-root, BuildKit cache, HEALTHCHECK, Trivy-scanned), docker-compose with Postgres + Prometheus + Grafana |
 | 6 | [`task-6/`](./task-6) | Kubernetes fundamentals, by hand: hand-written Deployment/Service/ConfigMap/Secret manifests deploying Task 5's image to a local Kind cluster, `kubectl` fluency, and a documented self-healing test (delete a pod, watch the ReplicaSet controller replace it) |
+| 7 | [`task-7/`](./task-7) | Kubernetes production patterns: Task 6's manifests packaged as a Helm chart (dev/prod values), ingress-nginx, probes tuned to `/health`'s real behavior, resource limits sized from measured usage, an HPA watched scaling under a `hey` load test, a zero-downtime rolling update + `helm rollback`, then the identical chart redeployed to a Floci-emulated EKS cluster via the real `aws eks` workflow |
 
 ## Architecture
 
@@ -88,6 +89,11 @@ setup.
 Task 6 additionally needs `kind` and `kubectl` (both installable via
 `brew install kind kubectl`) — see [`task-6/README.md`](./task-6) for
 the cluster setup, hand-written manifests, and the self-healing demo.
+
+Task 7 additionally needs `helm` and `hey` (`brew install helm hey`) plus
+the `aws` CLI and `floci` for the EKS-emulation half — see
+[`task-7/README.md`](./task-7) for the Helm chart, ingress/HPA setup, and
+the Kind-vs-Floci-EKS comparison.
 
 DVC is configured against a Floci-emulated S3 bucket (`s3://fleetpulse-dvc`) as its
 remote — `dvc push`/`dvc pull` behave exactly as they would against real AWS S3, no

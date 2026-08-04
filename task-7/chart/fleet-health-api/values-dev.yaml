@@ -1,0 +1,31 @@
+# Dev overrides — small footprint, fast-reacting HPA for demoing scale-up
+# and scale-down quickly, verbose logs. Only the keys that actually differ
+# from values.yaml are listed here.
+
+replicaCount: 1
+
+logLevel: DEBUG
+
+ingress:
+  host: fleetpulse.dev.local
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60
+  # short stabilization window so a load test's scale-down is visible in
+  # a normal working session instead of a 5-minute default wait
+  scaleDownStabilizationSeconds: 60
+
+# Bumped from an initial 50m/192Mi after `kubectl top pod` showed idle
+# usage (model loaded, no traffic) already sitting at 34-47m CPU / 232Mi
+# memory — see reports/break_it_undersized_cpu_request.md. A 50m request
+# put idle usage alone above the HPA's 60% target, so the HPA scaled to
+# maxReplicas with zero real traffic. 120m gives idle headroom under 60%.
+resources:
+  requests:
+    cpu: 120m
+    memory: 256Mi
+  limits:
+    cpu: 400m
+    memory: 448Mi

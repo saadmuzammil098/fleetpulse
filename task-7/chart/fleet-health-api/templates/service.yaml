@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-health-api
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "fleet-health-api.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: fleet-health-api
+  ports:
+    - port: 8811
+      targetPort: http
+      name: http
