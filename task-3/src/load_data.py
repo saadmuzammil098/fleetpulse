@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .features import SENSOR_COLUMNS, DEFAULT_WINDOWS, compute_ordered_features
+from .features import DEFAULT_WINDOWS, SENSOR_COLUMNS, compute_ordered_features
 
 TASK1_CLEANED_CSV = (
     Path(__file__).resolve().parents[2] / "task-1" / "data" / "processed" / "cleaned.csv"

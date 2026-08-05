@@ -17,6 +17,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 5 | [`task-5/`](./task-5) | Docker refresher and hardening: multi-stage Dockerfile for Task 4's API (non-root, BuildKit cache, HEALTHCHECK, Trivy-scanned), docker-compose with Postgres + Prometheus + Grafana |
 | 6 | [`task-6/`](./task-6) | Kubernetes fundamentals, by hand: hand-written Deployment/Service/ConfigMap/Secret manifests deploying Task 5's image to a local Kind cluster, `kubectl` fluency, and a documented self-healing test (delete a pod, watch the ReplicaSet controller replace it) |
 | 7 | [`task-7/`](./task-7) | Kubernetes production patterns: Task 6's manifests packaged as a Helm chart (dev/prod values), ingress-nginx, probes tuned to `/health`'s real behavior, resource limits sized from measured usage, an HPA watched scaling under a `hey` load test, a zero-downtime rolling update + `helm rollback`, then the identical chart redeployed to a Floci-emulated EKS cluster via the real `aws eks` workflow |
+| 8 | [`task-8/`](./task-8) | CI and the ML testing pyramid: ruff lint, pytest unit tests for the shared feature module and API schemas, Pandera data-contract tests run as automated checks, a reduced-scope training smoke test, FleetPulse-specific behavioral tests (torque/tool-wear directional expectations), pre-commit hooks, and a GitHub Actions workflow that lints, tests, and builds the Docker image on every PR |
 
 ## Architecture
 
@@ -79,7 +80,7 @@ request.
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install pandas pandera great-expectations dvc dvc-s3 mlflow fastapi uvicorn prometheus-fastapi-instrumentator
+pip install -r requirements.txt
 ```
 
 Task 5 additionally needs Docker Desktop (or another Docker Engine +
@@ -99,3 +100,8 @@ DVC is configured against a Floci-emulated S3 bucket (`s3://fleetpulse-dvc`) as 
 remote — `dvc push`/`dvc pull` behave exactly as they would against real AWS S3, no
 account or billing involved. Requires `eval $(floci env)` in your shell (see each task's
 README for exact commands).
+
+Task 8 additionally needs the dev/CI tools in `requirements-dev.txt` (ruff, pytest,
+pre-commit): `pip install -r requirements-dev.txt`, then `pre-commit install` to enable
+the lint/format git hooks, see [`task-8/README.md`](./task-8) for the full test suite
+and CI pipeline.

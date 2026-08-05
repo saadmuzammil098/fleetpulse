@@ -13,7 +13,6 @@ import pandas as pd
 from sklearn.metrics import average_precision_score
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
-from .evaluate import compute_metrics
 from .load_data import LEAKY_FAILURE_MODE_COLUMNS, build_dataset
 from .pipeline import RANDOM_STATE, build_pipeline
 
@@ -37,6 +36,7 @@ def demo_label_leak() -> str:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
     from .load_data import CATEGORICAL_FEATURES, NUMERIC_FEATURES
 
     preprocess = ColumnTransformer(

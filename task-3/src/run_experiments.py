@@ -20,13 +20,12 @@ from __future__ import annotations
 import json
 
 import mlflow
-import numpy as np
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
 
 from . import config
+from .features import DEFAULT_WINDOWS, SENSOR_COLUMNS
 from .load_data import CATEGORICAL_FEATURES, build_feature_dataset, rolling_feature_columns
-from .features import SENSOR_COLUMNS, DEFAULT_WINDOWS
 from .metrics import compute_metrics, find_best_threshold_by_f2
 from .pipeline import RANDOM_STATE, build_pipeline
 

@@ -15,9 +15,8 @@ same promotion workflow the roadmap spec describes.
 """
 from __future__ import annotations
 
-from mlflow import MlflowClient
-
 import mlflow
+from mlflow import MlflowClient
 
 from . import config
 
@@ -70,7 +69,7 @@ def render_rationale(best, runner_up_by_pr_auc, all_runs) -> str:
         "would. The registry promotion in this project is therefore "
         "cost-metric-driven, not leaderboard-driven.",
         "",
-        f"## Promotion gate",
+        "## Promotion gate",
         f"- Runs below {RECALL_FLOOR:.0%} validation recall were excluded "
         "from selection regardless of cost, a model that hits a low cost "
         "number by simply not flagging much of anything is not a model "

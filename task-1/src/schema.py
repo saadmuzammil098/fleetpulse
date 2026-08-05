@@ -4,8 +4,7 @@ This is what "physically plausible sensor ranges" and "missing-reading
 rules" (Task 1 spec) actually mean in code: anything that fails this schema
 is not safe to hand to a model.
 """
-import pandera.pandas as pa
-from pandera.pandas import Column, Check, DataFrameSchema
+from pandera.pandas import Check, Column, DataFrameSchema
 
 from .clean import SENSOR_RANGES
 

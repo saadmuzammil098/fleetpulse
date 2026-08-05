@@ -1,0 +1,17 @@
+# Runtime dependencies for tasks 1 through 4 (ingestion, training, tracking,
+# serving), shared across the repo-root .venv. Task 5's containerized API
+# pins its own copy in task-5/requirements.txt (see that file for why: the
+# Docker build needs a reproducible list independent of this venv). Task 8's
+# CI/lint/test tooling is pinned separately in requirements-dev.txt.
+pandas==2.3.3
+numpy==2.5.1
+pandera==0.32.1
+great_expectations==1.19.1
+dvc==3.67.1
+dvc-s3==3.3.0
+mlflow==3.14.0
+scikit-learn==1.9.0
+fastapi==0.140.13
+uvicorn==0.51.0
+pydantic==2.13.4
+prometheus-fastapi-instrumentator==8.1.0

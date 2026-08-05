@@ -1,0 +1,21 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    "task-3/mlartifacts",
+    "task-3/mlruns",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+# E501 (line too long): most of this repo's over-length lines are
+# deliberately long, wrapped prose in docstrings/comments explaining a
+# non-obvious design decision, not code ruff can usefully reflow. Every
+# other task folder in this repo names its own package `src` on purpose
+# (see task-2/src/load_data.py's docstring), that's a documented,
+# intentional collision, not something F811/F401 should flag either.
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["task-8/tests"]

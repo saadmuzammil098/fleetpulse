@@ -30,9 +30,9 @@ def scenario_missing_field() -> str:
         outcome = f"raised ValueError: {e}"
     return (
         "### 1. Malformed live reading (missing sensor field)\n\n"
-        f"Fed `FeatureComputer.compute` a reading missing `torque_nm` "
+        "Fed `FeatureComputer.compute` a reading missing `torque_nm` "
         "(a plausible sensor dropout, or an upstream field rename this "
-        "call site never picked up). Result: **{outcome}**\n\n"
+        f"call site never picked up). Result: **{outcome}**\n\n"
         "This is the training/serving-skew failure mode you *want*: loud "
         "and immediate, at the feature boundary, instead of a silently "
         "wrong prediction three steps downstream. `FeatureComputer` "
@@ -40,7 +40,7 @@ def scenario_missing_field() -> str:
         "anything, precisely so a shape mismatch between what training "
         "assumed and what a live reading actually carries cannot pass "
         "through unnoticed.\n"
-    ).format(outcome=outcome)
+    )
 
 
 def scenario_cold_start_skew() -> str:
@@ -58,7 +58,7 @@ def scenario_cold_start_skew() -> str:
     # Correct live replay: seeded with this stream's actual prior readings.
     seeded_computer = FeatureComputer(windows=DEFAULT_WINDOWS)
     for _, row in prefix.iterrows():
-        seeded_features = seeded_computer.compute(
+        _seeded_features = seeded_computer.compute(
             "L", {c: row[c] for c in SENSOR_COLUMNS}
         )
 

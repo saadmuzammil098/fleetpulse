@@ -28,7 +28,7 @@ def _render_pass_report(df: pd.DataFrame) -> str:
     lines = [
         "# FleetPulse Task 1 — Validation Report",
         "",
-        f"**Result:** PASSED",
+        "**Result:** PASSED",
         f"**Rows validated:** {len(df)}",
         f"**Columns checked:** {len(df.columns)}",
         "",
@@ -45,7 +45,7 @@ def _render_failure_report(df: pd.DataFrame, failure_cases: pd.DataFrame) -> str
     lines = [
         "# FleetPulse Task 1 — Validation Report",
         "",
-        f"**Result:** FAILED",
+        "**Result:** FAILED",
         f"**Rows checked:** {len(df)}",
         f"**Total failing cases:** {len(failure_cases)}",
         "",

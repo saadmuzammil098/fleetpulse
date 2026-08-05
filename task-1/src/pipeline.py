@@ -23,10 +23,10 @@ CLEAN_REPORT_JSON_PATH = DAY01_DIR / "reports" / "clean_report.json"
 
 sys.path.insert(0, str(DAY01_DIR))
 
-from src.ingest import ingest  # noqa: E402
 from src.clean import clean_dataset  # noqa: E402
-from src.validate import validate_dataset  # noqa: E402
+from src.ingest import ingest  # noqa: E402
 from src.profile import generate_profile_report  # noqa: E402
+from src.validate import validate_dataset  # noqa: E402
 
 
 def run(raw_path: Path = RAW_PATH) -> int:
