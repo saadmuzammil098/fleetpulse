@@ -67,3 +67,90 @@ jobs:
           tags: fleetpulse-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Task 9: build the Lambda image, push it to Floci's emulated ECR, and
+  # run Terraform against Floci, plan on every PR, apply on merge to main.
+  #
+  # This job runs on a SELF-HOSTED runner, not ubuntu-latest: Floci only
+  # listens on localhost.floci.io on this machine, GitHub's hosted
+  # runners run in GitHub's cloud and cannot reach it (the same
+  # local-only constraint task-8/README.md already documented for DVC,
+  # just hit again here for infrastructure instead of data). A
+  # self-hosted runner is a real trade-off, not a free lunch: it means
+  # any workflow run, including from a PR, can execute on this laptop,
+  # see task-9/README.md's "why a self-hosted runner" for the reasoning
+  # and how to shut it down.
+  deploy:
+    runs-on: [self-hosted, floci]
+    needs: [lint, test]
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localhost.floci.io:4566
+      TF_VAR_image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # actions/setup-python's hosted-runner tool cache assumes a
+      # /Users/runner-style home directory and fails with a permission
+      # error on this self-hosted runner's own account. This machine
+      # already has python3.12 on PATH (the same interpreter every other
+      # task's .venv uses), so a throwaway per-job venv sidesteps the
+      # tool cache entirely instead of fighting it.
+      - name: Set up venv
+        run: |
+          python3.12 -m venv .ci-venv
+          echo "$PWD/.ci-venv/bin" >> "$GITHUB_PATH"
+      - run: pip install -r requirements.txt
+
+      # Unlike task-8's CI (hosted runners, no Floci access), this
+      # self-hosted runner CAN reach Floci's S3 endpoint, so it pulls
+      # Task 1's real cleaned dataset instead of falling back to
+      # synthetic data, see task-9/scripts/export_model.py.
+      - name: dvc pull (Task 1 cleaned dataset)
+        working-directory: task-1
+        run: dvc pull
+
+      - name: Export Lambda model artifact
+        working-directory: task-9
+        run: python -m scripts.export_model
+
+      - name: Build Lambda image
+        run: docker build -f task-9/Dockerfile -t fleetpulse-api-lambda:${{ github.sha }} .
+
+      - name: Push image to Floci ECR
+        run: |
+          set -euo pipefail
+          REPO_URI=$(aws ecr describe-repositories --repository-names fleetpulse-api \
+            --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
+          if [ -z "$REPO_URI" ] || [ "$REPO_URI" = "None" ]; then
+            REPO_URI=$(aws ecr create-repository --repository-name fleetpulse-api \
+              --query 'repository.repositoryUri' --output text)
+          fi
+          REGISTRY="${REPO_URI%%/*}"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          docker tag fleetpulse-api-lambda:${{ github.sha }} "$REPO_URI:${{ github.sha }}"
+          docker push "$REPO_URI:${{ github.sha }}"
+
+      - name: Terraform fmt check
+        working-directory: task-9/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        working-directory: task-9/terraform
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: task-9/terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: task-9/terraform
+        run: terraform plan -input=false -out=tfplan
+
+      # Only merges to main touch the live function. A PR run stops here.
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: task-9/terraform
+        run: terraform apply -input=false -auto-approve tfplan

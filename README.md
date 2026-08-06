@@ -18,6 +18,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 6 | [`task-6/`](./task-6) | Kubernetes fundamentals, by hand: hand-written Deployment/Service/ConfigMap/Secret manifests deploying Task 5's image to a local Kind cluster, `kubectl` fluency, and a documented self-healing test (delete a pod, watch the ReplicaSet controller replace it) |
 | 7 | [`task-7/`](./task-7) | Kubernetes production patterns: Task 6's manifests packaged as a Helm chart (dev/prod values), ingress-nginx, probes tuned to `/health`'s real behavior, resource limits sized from measured usage, an HPA watched scaling under a `hey` load test, a zero-downtime rolling update + `helm rollback`, then the identical chart redeployed to a Floci-emulated EKS cluster via the real `aws eks` workflow |
 | 8 | [`task-8/`](./task-8) | CI and the ML testing pyramid: ruff lint, pytest unit tests for the shared feature module and API schemas, Pandera data-contract tests run as automated checks, a reduced-scope training smoke test, FleetPulse-specific behavioral tests (torque/tool-wear directional expectations), pre-commit hooks, and a GitHub Actions workflow that lints, tests, and builds the Docker image on every PR |
+| 9 | [`task-9/`](./task-9) | Serverless deployment via Floci: Mangum-wrapped FastAPI on a container-image Lambda function with a Function URL, a self-contained baked-in model (no MLflow registry dependency), a reusable `modules/lambda-service` Terraform module (ECR, IAM scoped to least privilege, SSM, Secrets Manager), an S3 backend with native state locking, drift-detection and bad-IAM-policy exercises, and a self-hosted GitHub Actions runner deploying on every merge to main |
 
 ## Architecture
 
@@ -105,3 +106,8 @@ Task 8 additionally needs the dev/CI tools in `requirements-dev.txt` (ruff, pyte
 pre-commit): `pip install -r requirements-dev.txt`, then `pre-commit install` to enable
 the lint/format git hooks, see [`task-8/README.md`](./task-8) for the full test suite
 and CI pipeline.
+
+Task 9 additionally needs `terraform` (`brew install terraform`), plus `docker` and
+`floci` (already needed above), see [`task-9/README.md`](./task-9) for the Lambda
+deployment, the reusable Terraform module, and why the deploy step in CI runs on a
+self-hosted runner instead of GitHub's hosted ones.
