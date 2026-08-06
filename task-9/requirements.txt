@@ -1,0 +1,15 @@
+# Runtime dependencies for the Lambda image only. Deliberately narrower
+# than task-5/requirements.txt: MODEL_SOURCE=artifact (see
+# task-4/src/model_registry.py) never touches MLflow, so mlflow and its
+# large dependency tree are left out entirely, and uvicorn is unused too
+# (public.ecr.aws/lambda/python's own Runtime Interface Client calls
+# Mangum's handler directly, no HTTP server needed inside the container).
+fastapi==0.140.13
+pydantic==2.13.4
+mangum==0.21.0
+pandas==2.3.3
+numpy==2.5.1
+scipy==1.18.0
+scikit-learn==1.9.0
+joblib==1.5.3
+prometheus-fastapi-instrumentator==8.1.0

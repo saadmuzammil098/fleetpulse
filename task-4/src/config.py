@@ -27,6 +27,21 @@ REGISTERED_MODEL_NAME = "fleetpulse-component-failure"
 MODEL_ALIAS = "production"
 MODEL_URI = f"models:/{REGISTERED_MODEL_NAME}@{MODEL_ALIAS}"
 
+# Task 9 addition: MODEL_SOURCE picks how model_registry.load_model() gets
+# its model. Default "registry" is everything above, unchanged, what
+# Tasks 4/6/7 already run. "artifact" is Lambda-only (set via the Task 9
+# Terraform module's environment_variables, never a code-level default):
+# Lambda has no bind mounts, so it cannot reach Task 3's MLflow store the
+# way Docker Compose or Kubernetes do, see task-9/README.md's "why the
+# Lambda image doesn't use the MLflow registry" for the full reason. In
+# "artifact" mode, MODEL_ARTIFACT_PATH points at a plain joblib file baked
+# into the image at build time (task-9/scripts/export_model.py).
+MODEL_SOURCE = os.environ.get("MODEL_SOURCE", "registry")
+MODEL_ARTIFACT_PATH = Path(
+    os.environ.get("MODEL_ARTIFACT_PATH", str(TASK4_ROOT / "model_artifact" / "model.joblib"))
+)
+MODEL_ARTIFACT_VERSION_PATH = MODEL_ARTIFACT_PATH.with_name("model_version.txt")
+
 # Business thresholds on failure_probability, applied to the model's score
 # to pick a recommended action. Not part of the model itself (moving them
 # doesn't require retraining) and not the same number as Task 2's

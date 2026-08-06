@@ -5,7 +5,10 @@ registry behind ``/predict``, with Pydantic schemas that reject physically
 impossible sensor readings before they reach ``FeatureComputer`` or the
 model at all.
 
-Run with ``uvicorn src.main:app`` from ``task-4/`` (see README).
+Run with ``uvicorn src.main:app`` from ``task-4/`` (see README). Task 9
+wraps this exact same ``app`` object with Mangum (``handler`` below) to
+run it as a Lambda function behind a Function URL, no separate app or
+duplicated route code, see task-9/README.md.
 """
 from __future__ import annotations
 
@@ -15,6 +18,7 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from mangum import Mangum
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from . import inference, model_registry
@@ -40,6 +44,16 @@ app = FastAPI(
 # broken down by path, with zero application code changes beyond this
 # one call.
 Instrumentator().instrument(app).expose(app)
+
+# Task 9 addition: Mangum adapts this same ASGI app to the Lambda
+# handler signature (event, context) -> response. lifespan="auto" makes
+# Mangum run the ASGI lifespan protocol (the @app.on_event("startup")
+# hook below, which loads the model) once per container on cold start,
+# the Lambda equivalent of what uvicorn already does once per process.
+# This has no effect at all when the app is run with uvicorn directly
+# (task-4/run_api.sh, docker-compose, Kubernetes), `handler` is simply
+# never imported or called on that path.
+handler = Mangum(app, lifespan="auto")
 
 
 @app.on_event("startup")
