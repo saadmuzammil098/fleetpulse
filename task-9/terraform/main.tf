@@ -10,7 +10,10 @@ module "fleetpulse_api" {
   image_tag     = var.image_tag
 
   memory_size = 512
-  timeout     = 30
+  # Bumped from 30s: cold starts loading pandas/scikit-learn plus the
+  # baked-in model occasionally ran close to the old limit in testing,
+  # 45s gives real headroom without masking a genuinely slow request.
+  timeout = 45
 
   # What the running Lambda actually reads at cold start
   # (task-4/src/config.py). MODEL_SOURCE=artifact points model_registry.py
