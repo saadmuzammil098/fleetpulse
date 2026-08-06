@@ -355,6 +355,45 @@ on push to `main`:
 4. `terraform fmt -check`, `terraform validate`, `terraform plan`
 5. `terraform apply`, **only** when the event is a push to `main`
 
+One real setup issue this surfaced: `actions/setup-python@v5` assumes a hosted-runner-
+style `/Users/runner` home directory for its tool cache and fails with `mkdir: /Users/
+runner: Permission denied` on a self-hosted runner running as a normal user account.
+Fixed by dropping that action from the `deploy` job in favor of a throwaway per-job venv
+built from the system `python3.12` already on this machine's PATH, the same interpreter
+every other task's `.venv` uses.
+
+**Live proof, PR #1**: opened a real PR, the `deploy` job's `terraform plan` step ran on
+the self-hosted runner and reported `Plan: 0 to add, 2 to change, 0 to destroy` (the two
+changes being the image tag moving to this PR's commit and Floci's known tags/
+image_config non-persistence, see the drift section above). Merged the PR, `terraform
+apply` ran against Floci for real:
+
+```
+$ aws lambda get-function --function-name fleetpulse-api --query 'Code.ImageUri'
+"000000000000.dkr.ecr.us-east-1.localhost:5100/fleetpulse-api:db8c8b7ca64839c81b0e6cde1a285f8b89b1a0d7"
+
+$ git rev-parse HEAD   # on main, right after the merge
+db8c8b7ca64839c81b0e6cde1a285f8b89b1a0d7
+```
+
+The deployed image tag is exactly the merge commit's SHA, proving this specific merge
+triggered this specific deploy, not a stale or manually-pushed image. The model version
+also changed, `20260806T042220Z-...` versus the manual test run's
+`20260806T033502Z-...` from earlier in this same session, because the CI job ran its own
+fresh `dvc pull` + `export_model.py` on the self-hosted runner, not a copy of anything
+built locally:
+
+```
+$ curl -s $FN_URL/health
+{"status":"ok","model_loaded":true,"model_name":"fleetpulse-component-failure",
+ "model_version":"20260806T042220Z-10000rows","api_version":"1.1.0"}
+
+$ curl -s -X POST $FN_URL/predict -H "Content-Type: application/json" -d '{...}'
+{"vehicle_id":"veh-ci-verify","failure_probability":0.4460996297705364,
+ "recommended_action":"schedule_service","model_name":"fleetpulse-component-failure",
+ "model_version":"20260806T042220Z-10000rows","readings_used":1}
+```
+
 ## Done when
 
 - [x] A fresh clone plus the reproduction steps above produces a running Lambda that
