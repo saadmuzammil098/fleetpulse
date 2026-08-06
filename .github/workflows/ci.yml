@@ -92,9 +92,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # actions/setup-python's hosted-runner tool cache assumes a
+      # /Users/runner-style home directory and fails with a permission
+      # error on this self-hosted runner's own account. This machine
+      # already has python3.12 on PATH (the same interpreter every other
+      # task's .venv uses), so a throwaway per-job venv sidesteps the
+      # tool cache entirely instead of fighting it.
+      - name: Set up venv
+        run: |
+          python3.12 -m venv .ci-venv
+          echo "$PWD/.ci-venv/bin" >> "$GITHUB_PATH"
       - run: pip install -r requirements.txt
 
       # Unlike task-8's CI (hosted runners, no Floci access), this
