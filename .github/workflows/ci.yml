@@ -83,12 +83,25 @@ jobs:
   deploy:
     runs-on: [self-hosted, floci]
     needs: [lint, test]
+    # pull-requests: write is what lets the "Post plan to PR" step below
+    # comment the plan onto the PR; default GITHUB_TOKEN permissions are
+    # read-only on some repos/orgs, so this is declared explicitly rather
+    # than assumed.
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
       AWS_ENDPOINT_URL: http://localhost.floci.io:4566
       TF_VAR_image_tag: ${{ github.sha }}
+      # Explicit, not left to whatever this self-hosted runner's account
+      # defaults to: actions/setup-python (see below) and
+      # hashicorp/setup-terraform both cache downloaded tools under
+      # $RUNNER_TOOL_CACHE, and on this runner's account that otherwise
+      # resolved to an unwritable /Users/runner path.
+      RUNNER_TOOL_CACHE: /Users/saadmuzammil/actions-runner/_toolcache
     steps:
       - uses: actions/checkout@v4
 
@@ -133,6 +146,18 @@ jobs:
           docker tag fleetpulse-api-lambda:${{ github.sha }} "$REPO_URI:${{ github.sha }}"
           docker push "$REPO_URI:${{ github.sha }}"
 
+      # terraform_wrapper wraps the `terraform` binary so steps below that
+      # set an `id:` get its stdout/stderr/exit code as step outputs
+      # (steps.plan.outputs.stdout, etc.), which is what makes posting
+      # the plan to the PR possible without a separate log-scraping step.
+      # Version pinned to match this machine's local Terraform, so a
+      # `terraform plan` here and one run by hand say the same thing.
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+          terraform_wrapper: true
+
       - name: Terraform fmt check
         working-directory: task-9/terraform
         run: terraform fmt -check -recursive
@@ -143,11 +168,65 @@ jobs:
 
       - name: Terraform validate
         working-directory: task-9/terraform
-        run: terraform validate
+        run: terraform validate -no-color
 
+      # continue-on-error here is deliberate: a failed plan should still
+      # get posted to the PR (so a reviewer can see *why* it failed,
+      # e.g. a bad interpolation), not disappear silently. The explicit
+      # "Fail job if plan failed" step below is what actually turns a
+      # plan error back into a failed check.
       - name: Terraform plan
+        id: plan
         working-directory: task-9/terraform
-        run: terraform plan -input=false -out=tfplan
+        run: terraform plan -input=false -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Post plan to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PLAN_STDOUT: ${{ steps.plan.outputs.stdout }}
+          PLAN_STDERR: ${{ steps.plan.outputs.stderr }}
+        with:
+          script: |
+            const marker = "<!-- task-9-terraform-plan -->";
+            const outcome = "${{ steps.plan.outcome }}";
+            const body_text = (process.env.PLAN_STDOUT || "") + (process.env.PLAN_STDERR || "(no output)");
+            // GitHub caps comment bodies well above this, but keep it
+            // sane for a human actually reading the PR.
+            const truncated = body_text.length > 60000
+              ? body_text.slice(0, 60000) + "\n... (truncated, see the full run log)"
+              : body_text;
+            const icon = outcome === "success" ? "✅" : "❌";
+            const body = `${marker}\n#### Terraform Plan (task-9) ${icon} \`${outcome}\`\n\n`
+              + `<details><summary>Show plan</summary>\n\n\`\`\`hcl\n${truncated}\n\`\`\`\n\n</details>\n\n`
+              + `*Commit \`${context.sha.slice(0, 7)}\`, workflow run [#${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail job if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
 
       # Only merges to main touch the live function. A PR run stops here.
       - name: Terraform apply

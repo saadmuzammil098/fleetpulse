@@ -353,14 +353,30 @@ on push to `main`:
 2. `python -m scripts.export_model` (real Task 3-shaped model)
 3. Build the Lambda image, push to Floci's ECR
 4. `terraform fmt -check`, `terraform validate`, `terraform plan`
-5. `terraform apply`, **only** when the event is a push to `main`
+5. **Post the plan as a comment on the PR** (enterprise-standard practice: a reviewer
+   should be able to see exactly what infrastructure change they're approving without
+   leaving the PR or digging through Actions logs)
+6. `terraform apply`, **only** when the event is a push to `main`
+
+Step 5 uses `hashicorp/setup-terraform`'s `terraform_wrapper: true` (captures
+`terraform plan`'s stdout as a step output) plus `actions/github-script` to create or,
+on a later push to the same PR, update one sticky comment (matched by an HTML marker
+comment) rather than posting a new one every run. The job declares
+`permissions: pull-requests: write` explicitly for this, default `GITHUB_TOKEN`
+permissions are read-only on some repos/orgs. A failed plan still gets posted (so a
+reviewer can see why), a separate step then fails the job.
 
 One real setup issue this surfaced: `actions/setup-python@v5` assumes a hosted-runner-
 style `/Users/runner` home directory for its tool cache and fails with `mkdir: /Users/
 runner: Permission denied` on a self-hosted runner running as a normal user account.
 Fixed by dropping that action from the `deploy` job in favor of a throwaway per-job venv
 built from the system `python3.12` already on this machine's PATH, the same interpreter
-every other task's `.venv` uses.
+every other task's `.venv` uses. `hashicorp/setup-terraform` (added for step 5 above)
+hits the same tool-cache assumption, so the job also sets `RUNNER_TOOL_CACHE` explicitly
+to a path this runner's account actually owns, rather than rediscovering the same bug a
+second time. That path is specific to this machine, a genuinely local, single-developer
+trade-off that comes with self-hosting at all, not something a hosted-runner setup would
+ever need.
 
 **Live proof, PR #1**: opened a real PR, the `deploy` job's `terraform plan` step ran on
 the self-hosted runner and reported `Plan: 0 to add, 2 to change, 0 to destroy` (the two
