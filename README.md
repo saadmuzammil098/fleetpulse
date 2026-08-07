@@ -2,9 +2,11 @@
 
 Predictive maintenance and fleet health monitoring for a commercial vehicle fleet — from
 raw sensor telemetry ingestion through a monitored, production-style API. Tasks 1–10 of a
-[30-day production AI/ML engineering roadmap](https://github.com/saadmuzammil098), built
-entirely against [Floci](https://floci.io) (a local AWS emulator) instead of a real AWS
-account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — runs at $0.
+[30-day production AI/ML engineering roadmap](https://github.com/saadmuzammil098), plus an
+11th bonus task (DAG orchestration, outside the original roadmap's numbering — see
+[`task-11/`](./task-11)), built entirely against [Floci](https://floci.io) (a local AWS
+emulator) instead of a real AWS account, so every AWS-shaped piece of this — S3, and later
+Lambda/ECR/EKS — runs at $0.
 
 ## Tasks
 
@@ -20,6 +22,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 8 | [`task-8/`](./task-8) | CI and the ML testing pyramid: ruff lint, pytest unit tests for the shared feature module and API schemas, Pandera data-contract tests run as automated checks, a reduced-scope training smoke test, FleetPulse-specific behavioral tests (torque/tool-wear directional expectations), pre-commit hooks, and a GitHub Actions workflow that lints, tests, and builds the Docker image on every PR |
 | 9 | [`task-9/`](./task-9) | Serverless deployment via Floci: Mangum-wrapped FastAPI on a container-image Lambda function with a Function URL, a self-contained baked-in model (no MLflow registry dependency), a reusable `modules/lambda-service` Terraform module (ECR, IAM scoped to least privilege, SSM, Secrets Manager), an S3 backend with native state locking, drift-detection and bad-IAM-policy exercises, and a self-hosted GitHub Actions runner deploying on every merge to main |
 | 10 | [`task-10/`](./task-10) | Observability: prediction logging that lands in CloudWatch Logs via Floci with zero extra plumbing (Lambda's own stdout shipping), an Evidently drift job (Task 1's validated telemetry as reference, live CloudWatch-logged predictions as the current window) computing one drift score pushed to both a Prometheus Pushgateway and a CloudWatch custom metric, a Grafana dashboard (latency/throughput/error-rate/drift) with a provisioned alert, a parallel CloudWatch alarm, and three break-it exercises (shifted winter sensor data, a Prometheus outage, and broken CloudWatch credentials/IAM) that surface real Floci fidelity gaps alongside a genuine self-hosted-vs-CloudWatch comparison |
+| 11 (bonus) | [`task-11/`](./task-11) | DAG orchestration with Apache Airflow 3.3.0 (LocalExecutor, via Docker Compose): one DAG runs Tasks 1/2/3's from-scratch pipeline (ingest → validate → fan out to train + track/promote), a second runs Task 10's drift job and, only if real drift is detected, retrains and promotes through a new champion/challenger gate — closing a real gap found in Task 3's `promote.py`, which always overwrote the production model with no comparison against what was already live |
 
 ## Architecture
 
@@ -118,3 +121,9 @@ prometheus-client), Task 5's docker-compose stack running (now with an added
 Pushgateway service), and Task 9's Lambda deployed and reachable through Floci — see
 [`task-10/README.md`](./task-10) for the drift job, the dashboard/alert provisioning,
 and the self-hosted-vs-CloudWatch comparison.
+
+Task 11 (bonus) needs `docker` and `floci` (already needed above) — `cd task-11 &&
+./run_stack.sh -d`, no separate Python install required, every DAG task runs against a
+dedicated virtualenv Docker builds for you, kept deliberately separate from Airflow's
+own environment — see [`task-11/README.md`](./task-11) for why, the two DAGs, and the
+champion/challenger promotion gate.

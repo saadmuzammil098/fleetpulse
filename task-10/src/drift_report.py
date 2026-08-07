@@ -317,6 +317,15 @@ def main() -> None:
     else:
         print(f"\nNo drift: drift_score={summary['drift_score']:.3f} < threshold={args.drift_threshold}")
 
+    # Task 11 addition: one compact, single-line JSON as the literal last
+    # line of stdout, on its own after the human-readable output above.
+    # Airflow's BashOperator auto-pushes a task's last stdout line to
+    # XCom (do_xcom_push=True is the default) — the drift-retrain DAG's
+    # branch task reads `drift_detected` from exactly this line, not by
+    # re-parsing the pretty-printed summary or opening the JSON report
+    # file this same run already wrote above.
+    print(json.dumps({"drift_detected": drift_detected, "drift_score": summary["drift_score"]}))
+
 
 if __name__ == "__main__":
     main()
