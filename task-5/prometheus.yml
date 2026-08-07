@@ -5,3 +5,12 @@ scrape_configs:
   - job_name: fleet-health-api
     static_configs:
       - targets: ["api:8811"]
+
+  # Task 10 addition: the drift job pushes here between runs, see
+  # task-10/README.md and task-5/docker-compose.yml's pushgateway service.
+  # honor_labels keeps the job/instance labels the pushed metrics already
+  # carry instead of overwriting them with this scrape target's own.
+  - job_name: fleetpulse-drift
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]

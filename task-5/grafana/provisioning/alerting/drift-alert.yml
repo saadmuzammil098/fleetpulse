@@ -1,0 +1,55 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: fleetpulse-drift
+    folder: FleetPulse
+    interval: 1m
+    rules:
+      - uid: fleetpulse-drift-score
+        title: "FleetPulse: drift score above threshold"
+        # Task 10's one required alert: fires when the last drift job's
+        # drift_score (share of compared columns Evidently flagged as
+        # drifted, see task-10/src/drift_report.py) is at/above 0.3, the
+        # same threshold that script's own --drift-threshold default uses
+        # to decide drift_detected, so "the alert fired" and "the drift
+        # job called it drift" always agree.
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              expr: fleetpulse_drift_score{job="fleetpulse_drift"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 1
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.3]
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: warning
+          service: fleetpulse-api
+        annotations:
+          summary: "FleetPulse drift_score is {{ $values.A }}, at or above the 0.3 alert threshold."
+          description: >-
+            Evidently flagged this share of compared sensor/prediction
+            columns as drifted against Task 1's reference window. Run
+            task-10/src/drift_report.py for the full HTML report and
+            per-column detail.

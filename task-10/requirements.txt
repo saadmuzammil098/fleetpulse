@@ -1,0 +1,7 @@
+# Incremental dependencies for Task 10's drift job and traffic generator,
+# on top of the repo-root requirements.txt (pandas, numpy, scikit-learn,
+# joblib via task-9's export already covers the model-scoring side).
+evidently==0.7.21
+boto3==1.43.66
+prometheus-client==0.26.0
+requests==2.34.2

@@ -1,7 +1,12 @@
 apiVersion: 1
 
 datasources:
+  # Task 10 addition: an explicit uid, pinned rather than left to
+  # Grafana's auto-generated one, so the dashboard and alert rule this
+  # task provisions (both reference datasourceUid: prometheus) resolve
+  # correctly regardless of provisioning order.
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090

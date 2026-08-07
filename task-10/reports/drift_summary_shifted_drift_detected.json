@@ -1,0 +1,18 @@
+{
+  "drift_score": 0.5714285714285714,
+  "drifted_column_count": 4.0,
+  "total_columns": 7,
+  "per_column_drift": {
+    "air_temperature_k": 5.822192838974321,
+    "process_temperature_k": 9.631532849123605,
+    "rotational_speed_rpm": 0.115733797875692,
+    "torque_nm": 0.08322384728732259,
+    "tool_wear_min": 0.09882189970907361,
+    "prediction": 0.38696427469465583,
+    "type": 0.012035200702451338
+  },
+  "drift_detected": true,
+  "threshold": 0.3,
+  "current_window_size": 146,
+  "reference_window_size": 2000
+}

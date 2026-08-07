@@ -49,6 +49,16 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Task 10 addition: the drift job (task-10/src/drift_report.py) is a
+  # batch job, not a long-lived process Prometheus can scrape, so it
+  # pushes its one drift_score gauge here between scrapes instead — see
+  # task-10/README.md.
+  pushgateway:
+    image: prom/pushgateway:latest
+    ports:
+      - "9091:9091"
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -58,6 +68,7 @@ services:
       - "9090:9090"
     depends_on:
       - api
+      - pushgateway
     restart: unless-stopped
 
   grafana:

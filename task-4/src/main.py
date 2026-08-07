@@ -110,6 +110,14 @@ def predict(request: PredictRequest) -> PredictResponse:
     model = model_registry.get_model()
     model_version = str(model_registry.get_model_version())
     result = inference.predict(model, model_version, request)
+    # Task 10 addition: the feature row actually scored, not just the
+    # response, is what the drift job needs (task-10/src/drift_report.py) —
+    # the raw sensor readings and the "type" stream key are directly
+    # comparable to Task 1's reference training distribution, the rolling
+    # features are not (Task 1 has no rolling window). Logged here, not
+    # returned in the response body, so the API contract Task 8's tests
+    # pin doesn't change.
+    feature_row = inference.build_feature_row(request)
     logger.info(
         "prediction_made",
         extra={
@@ -120,6 +128,13 @@ def predict(request: PredictRequest) -> PredictResponse:
             "failure_probability": result.failure_probability,
             "recommended_action": result.recommended_action.value,
             "model_version": model_version,
+            "features": {
+                "air_temperature_k": feature_row["air_temperature_k"],
+                "process_temperature_k": feature_row["process_temperature_k"],
+                "rotational_speed_rpm": feature_row["rotational_speed_rpm"],
+                "torque_nm": feature_row["torque_nm"],
+                "tool_wear_min": feature_row["tool_wear_min"],
+            },
         },
     )
     return result
