@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt -r task-10/requirements.txt
 
       # Unit tests: the shared feature module and the API's request/
       # response schemas, in isolation.
@@ -52,6 +52,15 @@ jobs:
       # fail.
       - name: Behavioral tests
         run: python -m pytest task-8/tests/test_behavioral.py -v
+
+      # Task 10: the Evidently drift-scoring math in isolation (synthetic
+      # dataframes, no CloudWatch/Floci access needed — see
+      # task-10/tests/test_drift_report.py's docstring for why the
+      # CloudWatch-reading and reference-loading halves aren't covered
+      # here, the same hosted-runner-can't-reach-Floci constraint as
+      # everything else in this job).
+      - name: Drift job unit tests
+        run: python -m pytest task-10/tests/test_drift_report.py -v
 
   docker-build:
     runs-on: ubuntu-latest
@@ -233,3 +242,36 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: task-9/terraform
         run: terraform apply -input=false -auto-approve tfplan
+
+      # Task 10 observability smoke check: every merge redeploys the
+      # Lambda, so every merge should re-prove the thing Task 10 is
+      # actually about — a real prediction's structured log landing in
+      # CloudWatch Logs via Floci with zero extra plumbing (see
+      # task-10/README.md). A unique marker in vehicle_id makes this
+      # invocation, not just "some invocation", findable in the log
+      # group. Full drift scoring against Task 1's reference data isn't
+      # run here on purpose: it needs a real current-traffic window,
+      # which a single post-deploy request isn't, and Task 10's own
+      # dashboards/alerting live in task-5's long-running docker-compose
+      # stack, not this short-lived CI job.
+      - name: Observability smoke check (CloudWatch Logs via Floci)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: task-9/terraform
+        run: |
+          set -euo pipefail
+          FN_URL=$(terraform output -raw function_url)
+          MARKER="ci-smoke-${{ github.sha }}"
+          curl -sf -X POST "$FN_URL/predict" -H "Content-Type: application/json" -d "{
+            \"vehicle_id\": \"$MARKER\", \"type\": \"M\",
+            \"telemetry_window\": [{\"air_temperature_k\": 300.0, \"process_temperature_k\": 310.0,
+              \"rotational_speed_rpm\": 1500.0, \"torque_nm\": 60.0, \"tool_wear_min\": 220.0}]
+          }" > /dev/null
+          sleep 3
+          FOUND=$(aws logs filter-log-events --log-group-name /aws/lambda/fleetpulse-api \
+            --start-time $(( ($(date +%s)-60)*1000 )) --filter-pattern "$MARKER" \
+            --query 'events[*].message' --output text)
+          if [ -z "$FOUND" ]; then
+            echo "::error::prediction_made log for $MARKER not found in CloudWatch Logs"
+            exit 1
+          fi
+          echo "Found in CloudWatch Logs: $FOUND"

@@ -30,7 +30,7 @@ and applies on merge to main.
   specifics anywhere in the module body, see "the reusable module" below.
 - `task-9/terraform/` (root): FleetPulse's instantiation of that module, plus the S3
   backend and provider configuration pointed at Floci.
-- `.github/workflows/ci.yml`'s new `deploy` job: builds the Lambda image, pushes it to
+- `.github/workflows/ci-cd.yml`'s new `deploy` job: builds the Lambda image, pushes it to
   Floci's ECR, runs `terraform fmt -check`, `validate`, and `plan` on every PR, `apply`
   only on merge to main.
 
@@ -154,7 +154,7 @@ gh api -X POST repos/<owner>/fleetpulse/actions/runners/registration-token
 ./run.sh   # foreground; nohup/a service manager for anything longer-lived
 ```
 
-`deploy` in `ci.yml` targets `runs-on: [self-hosted, floci]`; `lint`, `test`, and
+`deploy` in `ci-cd.yml` targets `runs-on: [self-hosted, floci]`; `lint`, `test`, and
 `docker-build` stay on `ubuntu-latest`, hosted, since they don't need Floci.
 
 **To stop exposing this laptop to workflow runs**: remove the runner
@@ -346,7 +346,7 @@ real parameter ARN is allowed, confirmed separately, see the module section abov
 
 ## GitHub Actions: plan on PR, apply on merge
 
-`.github/workflows/ci.yml`'s `deploy` job (self-hosted, see above) runs on every PR and
+`.github/workflows/ci-cd.yml`'s `deploy` job (self-hosted, see above) runs on every PR and
 on push to `main`:
 
 1. `dvc pull` (Task 1's real dataset, reachable from this runner)

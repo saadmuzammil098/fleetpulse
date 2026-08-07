@@ -19,6 +19,7 @@ account, so every AWS-shaped piece of this — S3, and later Lambda/ECR/EKS — 
 | 7 | [`task-7/`](./task-7) | Kubernetes production patterns: Task 6's manifests packaged as a Helm chart (dev/prod values), ingress-nginx, probes tuned to `/health`'s real behavior, resource limits sized from measured usage, an HPA watched scaling under a `hey` load test, a zero-downtime rolling update + `helm rollback`, then the identical chart redeployed to a Floci-emulated EKS cluster via the real `aws eks` workflow |
 | 8 | [`task-8/`](./task-8) | CI and the ML testing pyramid: ruff lint, pytest unit tests for the shared feature module and API schemas, Pandera data-contract tests run as automated checks, a reduced-scope training smoke test, FleetPulse-specific behavioral tests (torque/tool-wear directional expectations), pre-commit hooks, and a GitHub Actions workflow that lints, tests, and builds the Docker image on every PR |
 | 9 | [`task-9/`](./task-9) | Serverless deployment via Floci: Mangum-wrapped FastAPI on a container-image Lambda function with a Function URL, a self-contained baked-in model (no MLflow registry dependency), a reusable `modules/lambda-service` Terraform module (ECR, IAM scoped to least privilege, SSM, Secrets Manager), an S3 backend with native state locking, drift-detection and bad-IAM-policy exercises, and a self-hosted GitHub Actions runner deploying on every merge to main |
+| 10 | [`task-10/`](./task-10) | Observability: prediction logging that lands in CloudWatch Logs via Floci with zero extra plumbing (Lambda's own stdout shipping), an Evidently drift job (Task 1's validated telemetry as reference, live CloudWatch-logged predictions as the current window) computing one drift score pushed to both a Prometheus Pushgateway and a CloudWatch custom metric, a Grafana dashboard (latency/throughput/error-rate/drift) with a provisioned alert, a parallel CloudWatch alarm, and three break-it exercises (shifted winter sensor data, a Prometheus outage, and broken CloudWatch credentials/IAM) that surface real Floci fidelity gaps alongside a genuine self-hosted-vs-CloudWatch comparison |
 
 ## Architecture
 
@@ -111,3 +112,9 @@ Task 9 additionally needs `terraform` (`brew install terraform`), plus `docker` 
 `floci` (already needed above), see [`task-9/README.md`](./task-9) for the Lambda
 deployment, the reusable Terraform module, and why the deploy step in CI runs on a
 self-hosted runner instead of GitHub's hosted ones.
+
+Task 10 additionally needs `pip install -r task-10/requirements.txt` (Evidently, boto3,
+prometheus-client), Task 5's docker-compose stack running (now with an added
+Pushgateway service), and Task 9's Lambda deployed and reachable through Floci — see
+[`task-10/README.md`](./task-10) for the drift job, the dashboard/alert provisioning,
+and the self-hosted-vs-CloudWatch comparison.
