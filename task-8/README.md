@@ -102,7 +102,7 @@ python -m pytest task-8/tests -v
 
 ## What CI catches
 
-`.github/workflows/ci.yml` runs three jobs on every PR and on push to `main`: `lint`
+`.github/workflows/ci-cd.yml` runs three jobs on every PR and on push to `main`: `lint`
 (`ruff check .`), `test` (unit, data, training-smoke, and behavioral tests, as separate
 named steps), and `docker-build` (Task 5's Dockerfile, built but not pushed, proving
 the image still builds from a clean checkout).
