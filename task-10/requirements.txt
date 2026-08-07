@@ -1,7 +1,15 @@
 # Incremental dependencies for Task 10's drift job and traffic generator,
 # on top of the repo-root requirements.txt (pandas, numpy, scikit-learn,
 # joblib via task-9's export already covers the model-scoring side).
+#
+# boto3 deliberately unpinned: requirements.txt's dvc-s3 pulls in
+# aiobotocore, which constrains botocore to a narrower range than the
+# latest boto3 needs (confirmed: pinning an exact recent boto3 here
+# produces a real ResolutionImpossible when every requirements file is
+# installed together, aiobotocore's max compatible botocore trails
+# boto3/botocore's own latest release by a few weeks). Letting pip's
+# resolver pick lets the two stay mutually compatible as both move.
 evidently==0.7.21
-boto3==1.43.66
+boto3
 prometheus-client==0.26.0
 requests==2.34.2
