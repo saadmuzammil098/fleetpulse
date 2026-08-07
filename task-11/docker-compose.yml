@@ -1,0 +1,181 @@
+name: fleetpulse-airflow
+
+# Task 11: Apache Airflow 3.3.0, LocalExecutor (no Celery/Redis/worker/
+# flower — this is a single-machine learning setup, not a multi-node
+# production cluster, and LocalExecutor is Airflow's own supported,
+# documented executor for exactly that scale, not a shortcut). Trimmed
+# down from the official reference docker-compose.yaml
+# (https://airflow.apache.org/docs/apache-airflow/3.3.0/docker-compose.yaml)
+# to the services LocalExecutor actually needs: postgres, airflow-init,
+# airflow-apiserver, airflow-scheduler, airflow-dag-processor. See
+# README.md for exactly what was removed and why.
+#
+# The official Airflow image is used completely unmodified (no custom
+# Dockerfile) — see venv-init below and README.md's "why a separate
+# venv" for why this project's own dependencies (mlflow, pandas,
+# evidently, ...) are never installed into Airflow's own environment.
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:3.3.0-python3.12
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY:-ZmxlZXRwdWxzZS1sb2NhbC1vbmx5LW5vdC1hLXJlYWwtc2VjcmV0PQ==}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-fleetpulse-local-only-jwt-secret}
+    AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Both DAGs' BashOperator tasks call this venv-init-built interpreter,
+    # never Airflow's own — see venv-init below.
+    FLEETPULSE_VENV_PYTHON: /opt/fleetpulse-venv/bin/python
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./config:/opt/airflow/config
+    # The whole repo, read-write: task-1/2/3/10's scripts read/write
+    # sibling task directories by real relative path (e.g. task-3 reads
+    # ../task-1/data/processed/cleaned.csv, task-10's scripts import
+    # task-3/task-9 modules by file path) — see each script's own
+    # docstring. A DAGs-only mount can't reach any of that.
+    - ${HOST_REPO_PATH:?run via ./run_stack.sh, which sets this}:/opt/fleetpulse
+    - fleetpulse-venv:/opt/fleetpulse-venv
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+    venv-init:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # One-shot: builds the separate virtualenv every DAG task actually
+  # runs in (see x-airflow-common's FLEETPULSE_VENV_PYTHON and
+  # README.md's "why a separate venv"). Idempotent — a marker file skips
+  # the (slow) pip install on every container restart, only the first
+  # `docker compose up` and any deliberate `docker volume rm
+  # fleetpulse-airflow_fleetpulse-venv` rebuild it.
+  venv-init:
+    image: apache/airflow:3.3.0-python3.12
+    user: "0:0"
+    volumes:
+      - ${HOST_REPO_PATH:?run via ./run_stack.sh, which sets this}:/opt/fleetpulse
+      - fleetpulse-venv:/opt/fleetpulse-venv
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -euo pipefail
+        MARKER=/opt/fleetpulse-venv/.built
+        if [ -f "$$MARKER" ]; then
+          echo "fleetpulse venv already built, skipping (rm the fleetpulse-venv volume to force a rebuild)"
+          exit 0
+        fi
+        python3.12 -m venv /opt/fleetpulse-venv
+        /opt/fleetpulse-venv/bin/pip install --no-cache-dir --upgrade pip
+        /opt/fleetpulse-venv/bin/pip install --no-cache-dir \
+          -r /opt/fleetpulse/requirements.txt \
+          -r /opt/fleetpulse/task-10/requirements.txt
+        chmod -R a+rX /opt/fleetpulse-venv
+        touch "$$MARKER"
+        echo "fleetpulse venv built at /opt/fleetpulse-venv"
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
+        chown -R "${AIRFLOW_UID:-50000}:0" /opt/airflow/{logs,dags,plugins,config}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      venv-init:
+        condition: service_completed_successfully
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    # LocalExecutor runs each task as a subprocess of the scheduler
+    # itself, so this is the one container that actually needs to reach
+    # Floci (task-10's drift-check task calls CloudWatch through it) —
+    # confirmed reachable this way before writing any DAG code, see
+    # README.md.
+    extra_hosts:
+      - "localhost.floci.io:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-airflow-data:
+  fleetpulse-venv:

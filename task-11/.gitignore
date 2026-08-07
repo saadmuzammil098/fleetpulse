@@ -1,0 +1,5 @@
+# Airflow's own runtime output — regenerated every run, not source.
+logs/
+plugins/
+config/*
+!config/.gitkeep

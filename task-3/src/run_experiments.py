@@ -18,6 +18,8 @@ hyperparameter).
 from __future__ import annotations
 
 import json
+import os
+import time
 
 import mlflow
 from sklearn.calibration import CalibratedClassifierCV
@@ -88,7 +90,7 @@ def _split_indices(y, random_state=RANDOM_STATE):
     return train_idx, val_idx, test_idx
 
 
-def run_one(cfg: dict, datasets_by_windows: dict, split_ref_index) -> dict:
+def run_one(cfg: dict, datasets_by_windows: dict, split_ref_index, batch_id: str) -> dict:
     windows = tuple(cfg["windows"])
     X, y, _ordered = datasets_by_windows[windows]
 
@@ -150,6 +152,15 @@ def run_one(cfg: dict, datasets_by_windows: dict, split_ref_index) -> dict:
     }
 
     with mlflow.start_run(run_name=cfg["name"]) as run:
+        # Task 11 addition: tags this run with the batch it belongs to
+        # (one call to run_experiments.py logs 12 of these). Not read by
+        # anything in Task 3 itself — task-11's champion/challenger
+        # comparison script needs to select "the best of *this* retrain",
+        # not the best run ever logged across this file's whole history,
+        # and a tag is a more precise way to scope that than "most recent
+        # 12 by timestamp." Defaults to a plain timestamp when unset (see
+        # main()), so `dvc repro`/manual runs are unaffected.
+        mlflow.set_tag("batch_id", batch_id)
         mlflow.log_params(params)
         mlflow.log_metrics(metrics_out)
         mlflow.log_dict(val_metrics["confusion_matrix"], "val_confusion_matrix.json")
@@ -211,11 +222,20 @@ def main() -> list[dict]:
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     _ensure_experiment()
 
+    # FLEETPULSE_RUN_BATCH_ID: Task 11's DAGs set this to their Airflow
+    # run id before calling this module, the same env-var-override
+    # pattern task-4/src/config.py already uses for MODEL_SOURCE etc.
+    # Falls back to a timestamp so unset (manual/dvc repro) runs still
+    # get a distinct, real batch_id instead of a placeholder string.
+    batch_id = os.environ.get("FLEETPULSE_RUN_BATCH_ID", f"manual-{int(time.time())}")
+
     windows_needed = {tuple(c["windows"]) for c in RUN_CONFIGS}
     datasets_by_windows = _feature_datasets_by_windows(windows_needed)
     split_ref_index = next(iter(datasets_by_windows.values()))[1].index
 
-    results = [run_one(cfg, datasets_by_windows, split_ref_index) for cfg in RUN_CONFIGS]
+    results = [
+        run_one(cfg, datasets_by_windows, split_ref_index, batch_id) for cfg in RUN_CONFIGS
+    ]
 
     config.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     config.LEADERBOARD_PATH.write_text(render_leaderboard(results))
